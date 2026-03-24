@@ -1,1 +1,216 @@
-111
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3040 근무 플래너</title>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&display=swap');
+    :root { 
+        --blue: #1a3a6d; --pink: #ff85a1; --soft-pink: #fff0f3; --today: #fffde7;
+        --work-ju: #e3f2fd; --work-ya: #f3e5f5; --work-suk: #fff3e0; --work-bi: #eeeeee;
+        --sun: #e53935; --sat: #1e88e5;
+    }
+    body { font-family: 'Nanum Gothic', sans-serif; background: var(--soft-pink); margin: 0; padding: 10px; overflow-x: hidden; }
+    
+    /* 헤더 및 버튼 스타일 */
+    .header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 10px; }
+    .year-area { font-size: 24px; font-weight: 800; color: var(--blue); }
+    .btn-group { display: flex; gap: 5px; flex-wrap: wrap; }
+    button { padding: 6px 10px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; font-size: 13px; }
+    .btn-today { background: var(--pink); color: white; }
+    .btn-pattern { background: var(--blue); color: white; }
+    .btn-delete { background: #666; color: white; }
+
+    /* 달력 그리드 */
+    .calendar-card { background: white; padding: 10px; border-radius: 15px; box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+    .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+    .day-header { text-align: center; font-weight: bold; padding: 10px 0; font-size: 12px; color: #999; }
+    .day { min-height: 90px; background: #fcfcfc; border: 1px solid #f0f0f0; border-radius: 4px; padding: 4px; cursor: pointer; position: relative; }
+    .day.sun .date-num { color: var(--sun); }
+    .day.sat .date-num { color: var(--sat); }
+    .day.today { background: var(--today); border: 2px solid var(--pink); }
+    .date-num { font-weight: bold; font-size: 13px; }
+
+    /* 근무 라벨 스타일 */
+    .duty-tag { margin-top: 4px; padding: 2px 4px; border-radius: 4px; font-size: 11px; font-weight: bold; text-align: center; display: block; border: 1px solid rgba(0,0,0,0.05); }
+    .duty-ju { background: var(--work-ju); color: #1565c0; }
+    .duty-ya { background: var(--work-ya); color: #7b1fa2; }
+    .duty-suk { background: var(--work-suk); color: #e65100; }
+    .duty-bi { background: var(--work-bi); color: #616161; }
+    .event-dot { font-size: 10px; color: #333; display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+
+    /* 모달 */
+    .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 20px; z-index: 1001; width: 300px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+    .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 1000; backdrop-filter: blur(2px); }
+    input[type="text"] { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+
+    /* 메모장 (우측 하단 플로팅) */
+    .memo-btn { position: fixed; bottom: 20px; right: 10px; width: 50px; height: 50px; background: #b2dfdb; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 24px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 999; }
+</style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="year-area"><span id="curr-year"></span>.<span id="curr-month"></span></div>
+        <div class="btn-group">
+            <button class="btn-today" onclick="goToday()">오늘</button>
+            <button class="btn-pattern" onclick="openPatternModal()">패턴입력</button>
+            <button class="btn-delete" onclick="deleteMonthPattern()">패턴삭제</button>
+        </div>
+    </div>
+
+    <div class="calendar-card">
+        <div class="grid" id="calendar-grid"></div>
+    </div>
+
+    <div id="pattern-modal" class="modal">
+        <h3 style="margin-top:0;">근무 패턴 자동완성</h3>
+        <p style="font-size:12px; color:#666;">시작일(1일)부터 4~5일간의 근무를 입력하세요.<br>(예: 주주야숙, 야숙비비)</p>
+        <input type="text" id="pattern-input" placeholder="한글자씩 입력 (주,야,숙,비)">
+        <button class="btn-pattern" style="width:100%; padding:12px;" onclick="applyPattern()">패턴 적용하기</button>
+        <button onclick="closeModals()" style="width:100%; background:none; color:#999; margin-top:10px;">취소</button>
+    </div>
+
+    <div id="edit-modal" class="modal">
+        <h3 id="edit-date-title"></h3>
+        <select id="edit-duty-select" style="width:100%; padding:10px; border-radius:8px;">
+            <option value="">근무 없음 (일반)</option>
+            <option value="주">주간 (08:00~17:00)</option>
+            <option value="야">야간</option>
+            <option value="숙">숙직</option>
+            <option value="비">비번(휴무)</option>
+        </select>
+        <input type="text" id="edit-event-input" placeholder="메모 추가">
+        <button class="btn-pattern" style="width:100%; padding:12px;" onclick="saveIndividual()">저장하기</button>
+        <button onclick="closeModals()" style="width:100%; background:none; color:#999; margin-top:10px;">취소</button>
+    </div>
+
+    <div id="overlay" class="overlay" onclick="closeModals()"></div>
+    <div class="memo-btn" onclick="alert('메모장은 이전과 동일하게 연동 가능합니다.')">📝</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = { /* 승일 님의 설정값 붙여넣기 */ };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    let currentYear = new Date().getFullYear(), currentMonth = new Date().getMonth();
+    let dutyData = {}; // 날짜별 근무 데이터 { "2026-3-24": { duty: "야", note: "회의" } }
+    const patternCycle = ["주", "주", "야", "숙", "비", "비", "야", "숙"];
+
+    // 데이터 실시간 수신
+    onSnapshot(doc(db, "planner", "duty"), (snap) => {
+        if (snap.exists()) { dutyData = snap.data(); renderCalendar(); }
+    });
+
+    window.renderCalendar = () => {
+        const grid = document.getElementById('calendar-grid');
+        grid.innerHTML = '';
+        document.getElementById('curr-year').innerText = currentYear;
+        document.getElementById('curr-month').innerText = currentMonth + 1;
+
+        const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+        const lastDate = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+        ['일','월','화','수','목','금','토'].forEach(d => grid.innerHTML += `<div class="day-header">${d}</div>`);
+        for(let i=0; i<firstDay; i++) grid.innerHTML += `<div></div>`;
+
+        for(let d=1; d<=lastDate; d++) {
+            const dateStr = `${currentYear}-${currentMonth+1}-${d}`;
+            const info = dutyData[dateStr] || { duty: "", note: "" };
+            const dayOfWeek = new Date(currentYear, currentMonth, d).getDay();
+            
+            let dutyClass = info.duty === '주' ? 'duty-ju' : info.duty === '야' ? 'duty-ya' : info.duty === '숙' ? 'duty-suk' : info.duty === '비' ? 'duty-bi' : '';
+            
+            grid.innerHTML += `
+                <div class="day ${dayOfWeek===0?'sun':''} ${dayOfWeek===6?'sat':''}" onclick="openEditModal('${dateStr}')">
+                    <span class="date-num">${d}</span>
+                    ${info.duty ? `<span class="duty-tag ${dutyClass}">${info.duty}</span>` : ''}
+                    <span class="event-dot">${info.note || ''}</span>
+                </div>`;
+        }
+    };
+
+    // 패턴 적용 로직
+    window.applyPattern = async () => {
+        const input = document.getElementById('pattern-input').value; // 예: "야숙비비"
+        if (!input) return;
+
+        const startPattern = input.split(''); // ['야', '숙', '비', '비']
+        const lastDate = new Date(currentYear, currentMonth + 1, 0).getDate();
+        
+        // 시작 인덱스 찾기 (입력한 패턴이 전체 사이클에서 어디에 해당하는지)
+        // 승일 님이 입력한 패턴 조각이 주주야숙비비야숙 중 어디인지 매칭
+        let cycleIdx = findPatternStartIndex(startPattern);
+
+        for (let d = 1; d <= lastDate; d++) {
+            const dateStr = `${currentYear}-${currentMonth+1}-${d}`;
+            if (!dutyData[dateStr]) dutyData[dateStr] = {};
+            dutyData[dateStr].duty = patternCycle[cycleIdx];
+            cycleIdx = (cycleIdx + 1) % 8; // 8일 주기 회전
+        }
+
+        await setDoc(doc(db, "planner", "duty"), dutyData);
+        closeModals();
+    };
+
+    function findPatternStartIndex(inputParts) {
+        // 단순하게 입력된 첫 글자의 첫 번째 인덱스를 찾거나, 로직에 따라 매칭
+        // 여기서는 입력한 글자가 사이클의 몇번째인지 수동으로 찾는 로직을 보강할 수 있습니다.
+        const firstChar = inputParts[0];
+        return patternCycle.indexOf(firstChar) === -1 ? 0 : patternCycle.indexOf(firstChar);
+    }
+
+    // 패턴 삭제
+    window.deleteMonthPattern = async () => {
+        if(!confirm("이번 달의 모든 근무 패턴을 지울까요?")) return;
+        const lastDate = new Date(currentYear, currentMonth + 1, 0).getDate();
+        for (let d = 1; d <= lastDate; d++) {
+            delete dutyData[`${currentYear}-${currentMonth+1}-${d}`];
+        }
+        await setDoc(doc(db, "planner", "duty"), dutyData);
+    };
+
+    // 개별 수정
+    let selectedDate = "";
+    window.openEditModal = (dateStr) => {
+        selectedDate = dateStr;
+        const info = dutyData[dateStr] || { duty: "", note: "" };
+        document.getElementById('edit-date-title').innerText = dateStr;
+        document.getElementById('edit-duty-select').value = info.duty;
+        document.getElementById('edit-event-input').value = info.note;
+        document.getElementById('edit-modal').style.display = 'block';
+        document.getElementById('overlay').style.display = 'block';
+    };
+
+    window.saveIndividual = async () => {
+        if(!dutyData[selectedDate]) dutyData[selectedDate] = {};
+        dutyData[selectedDate].duty = document.getElementById('edit-duty-select').value;
+        dutyData[selectedDate].note = document.getElementById('edit-event-input').value;
+        await setDoc(doc(db, "planner", "duty"), dutyData);
+        closeModals();
+    };
+
+    window.openPatternModal = () => {
+        document.getElementById('pattern-modal').style.display = 'block';
+        document.getElementById('overlay').style.display = 'block';
+    };
+
+    window.closeModals = () => {
+        document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+        document.getElementById('overlay').style.display = 'none';
+    };
+
+    window.goToday = () => {
+        currentYear = new Date().getFullYear();
+        currentMonth = new Date().getMonth();
+        renderCalendar();
+    };
+
+    renderCalendar();
+</script>
+</body>
+</html>
