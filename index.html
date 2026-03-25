@@ -82,18 +82,20 @@
 /* 1. 모든 모달의 공통 규격 (상세 일정 모달이 잘 나오던 설정 기준) */
 .modal { 
     display: none; 
-    position: fixed !important; /* 무조건 화면 위에 띄움 */
+    position: fixed !important; 
     top: 50% !important; 
     left: 50% !important; 
-    transform: translate(-50%, -50%) !important; /* 정중앙 배치 */
+    transform: translate(-50%, -50%) !important; 
     background: white !important; 
     padding: 20px; 
     border-radius: 20px; 
-    z-index: 1200 !important; /* overlay보다 무조건 위 */
+    z-index: 1200 !important; /* overlay보다 확실히 위 */
     width: 280px; 
     border: 3px solid var(--pink); 
-    box-shadow: 0 10px 40px rgba(0,0,0,0.3); /* 그림자로 입체감 */
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
 }
+
+#pattern-modal { border-color: var(--blue) !important; }
 
 /* 연간 일정 전용 (홀브 일정과 동일하게 파란 테두리) */
 #yearly-modal {
@@ -183,7 +185,7 @@
         <div onclick="closeAll()" style="text-align:center; margin-top:15px; color:#aaa; cursor:pointer; font-size:14px;">취소하고 닫기</div>
     </div> -->
 
-    <div id="modal" class="modal">
+<div id="modal" class="modal" style="display: none; flex-direction: column;">
     <h3 id="modal-date-display" style="text-align: center; color: #333; margin-bottom: 20px;"></h3>
     <div style="font-size: 13px; color: #555; margin-bottom: 8px; font-weight: bold;">📅 등록된 일정</div>
     <div id="modal-list" style="margin-bottom:20px; max-height:180px; overflow-y:auto; border: 1px solid #ddd; padding: 10px; border-radius: 12px; background: #fafafa;"></div>
@@ -204,7 +206,7 @@
     </div>
 </div>
     <!-- <div id="pattern-modal" class="modal" style="border-color: var(--blue);"> -->
-<div id="pattern-modal" class="modal" style="display: none; flex-direction: column; border-color: var(--blue);">
+<div id="pattern-modal" class="modal" style="display: none; flex-direction: column;">
     <h3 style="text-align: center; color: var(--blue);">교대 근무 패턴 생성</h3>
         <div style="margin-bottom: 15px;">
             시작 일자: <input type="number" id="p-day" value="1" min="1" max="31" style="width: 50px; padding: 5px;"> 일
