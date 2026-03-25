@@ -126,15 +126,70 @@
     </div>
 
     <div id="pattern-modal" class="modal">
-        <h3 style="text-align: center; color: var(--blue);">교대 근무 패턴 적용</h3>
-        <div style="margin-bottom: 20px;">시작일: <input type="number" id="p-day" value="1" min="1" max="31" style="width: 60px; padding: 8px;"> 일</div>
-        <select id="p-idx" style="width: 100%; padding: 12px; border-radius: 10px; margin-bottom: 20px;">
-            <option value="0">주(1)-주-야-숙-비-비-야-숙</option>
-            <option value="2">야(3)-숙-비-비-야-숙-주-주</option>
-        </select>
-        <button class="add-btn" style="background:var(--blue);" onclick="applyPattern()">패턴 일괄 적용</button>
-        <div onclick="closeAll()" style="text-align:center; margin-top:15px; color:#aaa; cursor:pointer;">취소</div>
+    <h3 style="text-align: center; color: var(--blue); margin-bottom: 20px;">교대 근무 패턴 일괄 적용</h3>
+    <div style="margin-bottom: 15px; font-size: 15px;">
+        시작 일자: <input type="number" id="p-day" value="1" min="1" max="31" style="width: 60px; padding: 8px; border: 1px solid #ddd; border-radius: 8px;"> 일 부터
     </div>
+    <div style="margin-bottom: 20px;">
+        <div style="margin-bottom: 8px; font-weight: bold; color: #555;">시작 근무 선택 (8단계):</div>
+        <select id="p-idx" style="width: 100%; padding: 12px; border-radius: 10px; border: 2px solid #eee; font-size: 14px;">
+            <option value="0">1. 주</option>
+            <option value="1">2. 주</option>
+            <option value="2">3. 야</option>
+            <option value="3">4. 숙</option>
+            <option value="4">5. 비</option>
+            <option value="5">6. 비</option>
+            <option value="6">7. 야</option>
+            <option value="7">8. 숙</option>
+        </select>
+    </div>
+    <button class="add-btn" style="background:var(--blue); margin-bottom: 10px;" onclick="applyPattern()">해당 월 패턴 일괄 적용</button>
+    <div onclick="closeAll()" style="text-align:center; color:#aaa; cursor:pointer; font-size: 14px;">설정 취소</div>
+</div>
+
+<script type="module">
+    // ... 상단 Firebase 및 초기화 로직 동일 ...
+
+    // 패턴 일괄 적용 로직 (복구 및 강화)
+    window.applyPattern = async () => {
+        const startDay = parseInt(document.getElementById('p-day').value);
+        const startIdx = parseInt(document.getElementById('p-idx').value);
+        const lastDate = new Date(currentYear, currentMonth + 1, 0).getDate();
+        
+        // 8일 주기 패턴 정의
+        const fullCycle = ["주", "주", "야", "숙", "비", "비", "야", "숙"];
+        const cycleColors = { "주": "#e3f2fd", "야": "#ede7f6", "숙": "#fff9c4", "비": "#e8f5e9" };
+
+        if (confirm(`${currentMonth + 1}월 ${startDay}일부터 말일까지 패턴을 적용하시겠습니까?\n(기존 근무 일정은 삭제됩니다.)`)) {
+            for (let d = startDay; d <= lastDate; d++) {
+                const dateStr = `${currentYear}-${currentMonth + 1}-${d}`;
+                
+                // 기존 데이터에서 '근무(isWork)' 태그만 필터링해서 제거 (가족 일정은 보존)
+                if (!data[dateStr]) data[dateStr] = [];
+                data[dateStr] = data[dateStr].filter(ev => !ev.isWork);
+
+                // 선택한 시작 인덱스부터 순환하며 패턴 삽입
+                const currentIdx = (startIdx + (d - startDay)) % 8;
+                const task = fullCycle[currentIdx];
+                
+                data[dateStr].unshift({
+                    text: task,
+                    color: cycleColors[task],
+                    isWork: true,
+                    isHoliday: false
+                });
+            }
+
+            try {
+                await setDoc(doc(db, "work_planner", "data"), data);
+                alert("패턴이 정상적으로 적용되었습니다.");
+                window.closeAll();
+                renderCalendar();
+            } catch (e) {
+                alert("저장 중 오류가 발생했습니다.");
+            }
+        }
+    };
 
     <div id="yearly-modal" class="modal">
         <h2 style="text-align: center; color: var(--blue); margin-top: 0;">📅 <span id="yearly-title"></span>년 전체 일정</h2>
