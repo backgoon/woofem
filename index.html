@@ -135,14 +135,15 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    const firebaseConfig = {
-        apiKey: "AIzaSyCjKNiwIuWn1-MhAgsIRz1C5FCa7NTy_5o",
-        authDomain: "backgoon-811dc.firebaseapp.com",
-        projectId: "backgoon-811dc",
-        storageBucket: "backgoon-811dc.firebasestorage.app",
-        messagingSenderId: "275172993103",
-        appId: "1:275172993103:web:e001d6487f8429d736a23a"
-    };
+const bdbConfig = {
+  apiKey: "$BDB_API_KEY",
+  authDomain: "$BDB_AUTH_DOMAIN",
+  projectId: "$BDB_PROJECT_ID",
+  storageBucket: "$BDB_STORAGE_BUCKET",
+  messagingSenderId: "$BDB_SENDER_ID",
+  appId: "$BDB_APP_ID"
+};
+    
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
