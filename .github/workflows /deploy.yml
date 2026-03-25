@@ -1,0 +1,35 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Replace secrets in index.html
+        run: |
+          # index.html 안의 "$BDB_..." 문구를 금고의 진짜 값으로 교체합니다.
+          # 따옴표와 달러 기호 충돌을 피하기 위해 가장 안전한 구분자(|)를 사용했습니다.
+          
+          sed -i 's|\$BDB_API_KEY|${{ secrets.BDB_API_KEY_PLACEHOLDER }}|g' index.html
+          sed -i 's|\$BDB_AUTH_DOMAIN|${{ secrets.BDB_AUTH_DOMAIN_PLACEHOLDER }}|g' index.html
+          sed -i 's|\$BDB_PROJECT_ID|${{ secrets.BDB_PROJECT_ID_PLACEHOLDER }}|g' index.html
+          sed -i 's|\$BDB_STORAGE_BUCKET|${{ secrets.BDB_STORAGE_BUCKET_PLACEHOLDER }}|g' index.html
+          sed -i 's|\$BDB_SENDER_ID|${{ secrets.BDB_SENDER_ID_PLACEHOLDER }}|g' index.html
+          sed -i 's|\$BDB_APP_ID|${{ secrets.BDB_APP_ID_PLACEHOLDER }}|g' index.html
+
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: .
+          branch: gh-pages
+          clean: true
