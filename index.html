@@ -37,8 +37,23 @@
     .holiday-label { font-size: 11px; font-weight: 800; display: block; margin-bottom: 3px; word-break: break-all; }
     .event-container { display: flex; flex-wrap: wrap; gap: 3px; width: 100%; padding: 2px; justify-content: flex-start; }
 
-    .event-tag { display: inline-block; padding: 2px 4px; border-radius: 4px; font-size: 11px; color: #333; line-height: 1.4; max-width: 95%; word-break: break-all; white-space: normal; box-shadow: 0 1px 2px rgba(0,0,0,0.1); cursor: pointer; }
-
+/* --- 수정 시작 --- */
+.event-tag { 
+    display: block; /* 한 줄에 하나씩(줄바꿈처럼 보이게) */
+    padding: 3px 5px; 
+    border-radius: 4px; 
+    font-size: 11px; 
+    color: #333; 
+    line-height: 1.3; 
+    margin-bottom: 2px;
+    width: 95%; 
+    word-break: break-all; 
+    white-space: pre-wrap; /* 저장된 엔터값 그대로 표시 */
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1); 
+    cursor: pointer;
+    background-color: #eee; /* 기본 배경색 */
+}
+/* --- 수정 끝 --- */
     /* [유지] PC 메모장 스타일 */
     .memo-container { position: relative; background: #e0f2f1; width: 450px; height: 180px; padding: 10px; box-shadow: 5px 5px 15px rgba(0,0,0,0.1); border-left: 10px solid #b2dfdb; z-index: 100; cursor: text; }
     #memo-area { width: 100%; height: 100%; background: transparent; border: none; font-family: 'Nanum Gothic', sans-serif; font-size: 16px; font-weight: 800; line-height: 1.8; resize: none; outline: none; display: block; color: #1a1a1a; caret-color: #ff0000 !important; padding: 10px; box-sizing: border-box; overflow-y: auto; }
@@ -179,16 +194,18 @@
             const dateStr = `${currentYear}-${currentMonth+1}-${d}`, dayOfWeek = new Date(currentYear, currentMonth, d).getDay();
             const userEvents = data[dateStr] || [], isUserHoliday = userEvents.find(ev => ev.isHoliday);
             let holidayName = holidays[dateStr] || (isUserHoliday ? isUserHoliday.text : '');
-            
-            const baseClass = (dayOfWeek === 0 || holidayName) ? "day sun" : (dayOfWeek === 6 ? "day sat" : "day");
-            const finalClass = (currentYear === now.getFullYear() && currentMonth === now.getMonth() && d === now.getDate()) ? baseClass + " today" : baseClass;
+
+            let dayClass = (dayOfWeek === 0 || holidayName) ? "day sun" : (dayOfWeek === 6 ? "day sat" : "day");
+            if (currentYear === now.getFullYear() && currentMonth === now.getMonth() && d === now.getDate()) dayClass += " today";
 
             const eventHtml = userEvents.filter(ev => !ev.isHoliday).map(ev => {
-                const bgColor = ev.isWork ? (cycleColors[ev.text] || '#eee') : (ev.color || '#eee');
-                return `<span class="event-tag ${ev.isWork ? 'work-tag' : ''}" style="background:${bgColor}; white-space: pre-wrap; display: block; margin-bottom: 2px;">${ev.text}</span>`;
+                // 글자 앞뒤 공백 제거 후 색상 매칭 (예: " 주 " -> "주")
+                const task = ev.text.trim();
+                const bgColor = ev.isWork ? (cycleColors[task] || ev.color || '#eee') : (ev.color || '#eee');
+                return `<span class="event-tag ${ev.isWork ? 'work-tag' : ''}" style="background-color:${bgColor} !important;">${ev.text}</span>`;
             }).join('');
 
-            grid.innerHTML += `<div class="${finalClass}" ondblclick="openModal('${dateStr}')">
+            grid.innerHTML += `<div class="${dayClass}" ondblclick="openModal('${dateStr}')">
                 <span class="date-num">${d}</span>
                 ${holidayName ? `<span class="holiday-label">${holidayName}</span>` : ''}
                 <div class="event-container">${eventHtml}</div>
@@ -229,9 +246,13 @@
         const events = data[selectedDate] || [];
         events.forEach((ev, i) => {
             const displayText = ev.isWork ? `[근무] ${ev.text}` : ev.text;
-            const bgColor = ev.isWork ? (cycleColors[ev.text] || '#eee') : (ev.color || '#eee');
-            div.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; background:${bgColor}; padding:8px; margin-bottom:5px; border-radius:8px;">
-                <span onclick="prepareEdit(${i})" style="cursor:pointer; flex:1; font-weight:${ev.isWork ? '800' : '400'}; white-space: pre-wrap; word-break: break-all;">${ev.isHoliday ? '🚩 ' : ''}${displayText}</span>
+            const task = ev.text.trim();
+            const bgColor = ev.isWork ? (cycleColors[task] || ev.color || '#eee') : (ev.color || '#eee');
+            
+            div.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; background-color:${bgColor} !important; padding:8px; margin-bottom:5px; border-radius:8px;">
+                <span onclick="prepareEdit(${i})" style="cursor:pointer; flex:1; font-weight:${ev.isWork ? '800' : '400'}; white-space: pre-wrap; word-break: break-all;">
+                    ${ev.isHoliday ? '🚩 ' : ''}${displayText}
+                </span>
                 <button onclick="deleteEvent(${i})" style="border:none; background:none; color:#999; cursor:pointer; font-size:18px;">&times;</button>
             </div>`;
         });
