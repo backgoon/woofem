@@ -282,16 +282,16 @@ textarea#event-input:focus { border-color: #ff85a1; }
     
         events.forEach((ev, i) => {
             const displayText = ev.isWork ? `[근무] ${ev.text}` : ev.text;
-            const task = ev.text.trim();
-            const bgColor = ev.isWork ? (cycleColors[task] || ev.color || '#eee') : (ev.color || '#eee');
-            
-            div.innerHTML += `
-                <div style="display:flex; justify-content:space-between; align-items:center; background-color:${bgColor} !important; padding:0 12px; margin-bottom:8px; border-radius:12px; height:45px; box-sizing:border-box;">
-                    <span onclick="prepareEdit(${i})" style="cursor:pointer; flex:1; font-family: inherit; font-size: 14px; color: #333; text-align: left; white-space: pre-wrap; word-break: break-all; line-height: 1.4; display: block;">
-                        ${ev.isHoliday ? '🚩 ' : ''}${displayText}
-                    </span>
-                    <button onclick="deleteEvent(${i})" style="border:none; background:none; color:#bbb; cursor:pointer; font-size:20px; display:flex; align-items:center;">&times;</button>
-                </div>`;
+        const task = ev.text.trim();
+        const bgColor = ev.isWork ? (cycleColors[task] || ev.color || '#eee') : (ev.isHoliday ? '#fff5f5' : (ev.color || '#eee'));
+        
+        div.innerHTML += `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:${bgColor} !important; padding:8px; margin-bottom:8px; border-radius:12px; height:45px; box-sizing:border-box; border: ${ev.isHoliday ? '1px solid #ffcdd2' : '1px solid #eee'};">
+                <span onclick="prepareEdit(${i})" style="cursor:pointer; flex:1; text-align: left; font-family: inherit; font-size: 14px; font-weight:${ev.isHoliday || ev.isWork ? 'bold' : 'normal'}; color:${ev.isHoliday ? '#c62828' : '#333'}; white-space: pre-wrap; word-break: break-all; line-height: 1.2;">
+                    ${ev.isHoliday ? '🚩 ' : ''}${displayText}
+                </span>
+                <button onclick="deleteEvent(${i})" style="border:none; background:none; color:#999; cursor:pointer; font-size:18px; padding:0 5px; display:flex; align-items:center;">&times;</button>
+            </div>`;
         });
     };
 
