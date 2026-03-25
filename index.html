@@ -188,7 +188,12 @@
             grid.innerHTML += `<div class="${dayClass}" ondblclick="openModal('${dateStr}')">
                 <span class="date-num">${d}</span>
                 ${holidayName ? `<span class="holiday-label">${holidayName}</span>` : ''}
-                <div class="event-container">${userEvents.filter(ev => !ev.isHoliday).map(ev => `<span class="event-tag ${ev.isWork ? 'work-tag' : ''}" style="background:${ev.color || '#eee'};">${ev.text}</span>`).join('')}</div>
+                <div class="event-container">${userEvents.filter(ev => !ev.isHoliday).map(ev => {
+                /* 수정 부분 시작 */
+                const bgColor = ev.isWork ? cycleColors[ev.text] : (ev.color || '#eee');
+                return `<span class="event-tag ${ev.isWork ? 'work-tag' : ''}" style="background:${bgColor};">${ev.text}</span>`;
+                /* 수정 부분 끝 */
+            }).join('')}</div>
             </div>`;
         }
     }
@@ -209,7 +214,13 @@
             const ds = `${currentYear}-${currentMonth+1}-${d}`; if (!data[ds]) data[ds] = [];
             data[ds] = data[ds].filter(e => !e.isWork);
             const type = cycle[idx % 8];
-            data[ds].unshift({ text: type, color: cycleColors[type], isWork: true, isHoliday: false }); idx++;
+            data[ds].unshift({ 
+                text: type, 
+                color: cycleColors[type], 
+                isWork: true, 
+                isHoliday: false 
+            });
+            idx++;
         }
         await setDoc(doc(db, "work_planner", "data"), data); window.closeAll();
     };
@@ -219,8 +230,13 @@
         const div = document.getElementById('modal-list'); div.innerHTML = '';
         const events = data[selectedDate] || [];
         events.forEach((ev, i) => {
-            div.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; background:${ev.color || '#eee'}; padding:8px; margin-bottom:5px; border-radius:8px;">
-                <span onclick="prepareEdit(${i})" style="cursor:pointer; flex:1;">${ev.isHoliday ? '🚩 ' : ''}${ev.text}</span>
+            const displayText = ev.isWork ? `[근무] ${ev.text}` : ev.text;
+            const bgColor = ev.isWork ? cycleColors[ev.text] : (ev.color || '#eee');
+            
+            div.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; background:${bgColor}; padding:8px; margin-bottom:5px; border-radius:8px;">
+                <span onclick="prepareEdit(${i})" style="cursor:pointer; flex:1; font-weight:${ev.isWork ? '800' : '400'};">
+                    ${ev.isHoliday ? '🚩 ' : ''}${displayText}
+                </span>
                 <button onclick="deleteEvent(${i})" style="border:none; background:none; color:#999; cursor:pointer; font-size:18px;">&times;</button>
             </div>`;
         });
