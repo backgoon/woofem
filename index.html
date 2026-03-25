@@ -287,12 +287,11 @@ textarea#event-input:focus { border-color: #ff85a1; }
             
             // padding을 4px로 줄이고, font-size를 12px로 낮춰 높이를 압축함
             div.innerHTML += `
-        div.innerHTML += `
             <div style="display:flex; justify-content:space-between; align-items:center; background-color:${bgColor} !important; padding:0 12px; margin-bottom:8px; border-radius:12px; height:45px; box-sizing:border-box; border: 1px solid rgba(0,0,0,0.05);">
-                <span onclick="prepareEdit(${i})" style="cursor:pointer; flex:1; font-weight:${ev.isWork ? '800' : '400'}; font-size:14px; color:#333; white-space: pre-wrap; text-align: left; line-height: 1.2;">
+                <span onclick="prepareEdit(${i})" style="cursor:pointer; flex:1; font-weight:${ev.isWork ? '800' : '400'}; font-size:14px; color:#333; white-space: pre-wrap; text-align: left; overflow: hidden; text-overflow: ellipsis; line-height: 1.2;">
                     ${ev.isHoliday ? '🚩 ' : ''}${displayText}
                 </span>
-                <button onclick="deleteEvent(${i})" style="border:none; background:none; color:#bbb; cursor:pointer; font-size:18px; display:flex; align-items:center;">&times;</button>
+                <button onclick="deleteEvent(${i})" style="border:none; background:none; color:#bbb; cursor:pointer; font-size:20px; line-height:1; display:flex; align-items:center;">&times;</button>
             </div>`;
         });
     };
