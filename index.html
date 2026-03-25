@@ -158,6 +158,12 @@
     const cycle = ["주", "주", "야", "숙", "비", "비", "야", "숙"];
     const cycleColors = { "주": "#e3f2fd", "야": "#ede7f6", "숙": "#fff9c4", "비": "#e8f5e9" };
 
+    // 고정 공휴일 데이터 (복구)
+    const holidays = {
+        "1-1": "신정", "3-1": "삼일절", "5-5": "어린이날", "6-6": "현충일", 
+        "8-15": "광복절", "10-3": "개천절", "10-9": "한글날", "12-25": "성탄절"
+    };
+
     onSnapshot(doc(db, "work_planner", "data"), (snap) => { if (snap.exists()) { data = snap.data(); renderCalendar(); } });
     onSnapshot(doc(db, "work_planner", "memo"), (snap) => { if (snap.exists() && document.activeElement.id !== 'memo-area') document.getElementById('memo-area').value = snap.data().text || ""; });
 
@@ -170,11 +176,17 @@
         ['일','월','화','수','목','금','토'].forEach(d => grid.innerHTML += `<div class="day-header">${d}</div>`);
         for(let i=0; i<firstDay; i++) grid.innerHTML += `<div class="day"></div>`;
 
-        const now = new Date();
         for(let d=1; d<=lastDate; d++) {
             const dateStr = `${currentYear}-${currentMonth+1}-${d}`, dayOfWeek = new Date(currentYear, currentMonth, d).getDay();
-            const events = data[dateStr] || [], isHoliday = events.find(ev => ev.isHoliday);
-            let dayClass = (dayOfWeek === 0 || isHoliday) ? "day sun" : (dayOfWeek === 6 ? "day sat" : "day");
+            const events = data[dateStr] || [];
+            
+            // 고정 공휴일 체크 및 사용자 지정 공휴일 체크
+            const fixHoliday = holidays[`${currentMonth+1}-${d}`];
+            const userHoliday = events.find(ev => ev.isHoliday);
+            const holidayName = fixHoliday || (userHoliday ? userHoliday.text : "");
+
+            let dayClass = (dayOfWeek === 0 || holidayName) ? "day sun" : (dayOfWeek === 6 ? "day sat" : "day");
+            const now = new Date();
             if (currentYear === now.getFullYear() && currentMonth === now.getMonth() && d === now.getDate()) dayClass += " today";
 
             const eventHtml = events.filter(ev => !ev.isHoliday).map(ev => {
@@ -182,10 +194,44 @@
                 const bgColor = ev.isWork ? (cycleColors[task] || ev.color || '#eee') : (ev.color || '#eee');
                 return `<span class="event-tag ${ev.isWork?'work-tag':''}" style="background-color:${bgColor} !important;">${ev.text}</span>`;
             }).join('');
-            grid.innerHTML += `<div class="${dayClass}" ondblclick="openModal('${dateStr}')"><span class="date-num">${d}</span>${isHoliday?`<span class="holiday-label">${isHoliday.text}</span>`:''}<div class="event-container">${eventHtml}</div></div>`;
+
+            grid.innerHTML += `<div class="${dayClass}" ondblclick="openModal('${dateStr}')">
+                <span class="date-num">${d}</span>
+                ${holidayName ? `<span class="holiday-label">${holidayName}</span>` : ''}
+                <div class="event-container">${eventHtml}</div>
+            </div>`;
         }
     }
 
+    window.openYearlyView = () => {
+        const container = document.getElementById('yearly-list-container'); container.innerHTML = '';
+        document.getElementById('yearly-title').innerText = currentYear;
+        for (let m = 1; m <= 12; m++) {
+            let mHtml = '';
+            const daysInMonth = new Date(currentYear, m, 0).getDate();
+            for(let d=1; d<=daysInMonth; d++) {
+                const dateStr = `${currentYear}-${m}-${d}`;
+                const fixH = holidays[`${m}-${d}`];
+                const dayEvents = data[dateStr] || [];
+                
+                let combined = [];
+                if(fixH) combined.push(`<span style="color:red; font-weight:bold;">[${fixH}]</span>`);
+                dayEvents.forEach(ev => combined.push(ev.isHoliday ? `<span style="color:red;">[${ev.text}]</span>` : ev.text));
+
+                if (combined.length > 0) {
+                    mHtml += `<div style="display:flex; padding:5px; border-bottom:1px solid #eee; font-size:14px;">
+                        <span style="width:40px; font-weight:bold;">${d}일</span>
+                        <span style="flex:1;">${combined.join(', ')}</span>
+                    </div>`;
+                }
+            }
+            if (mHtml) container.innerHTML += `<div style="margin-top:10px; border-bottom:2px solid var(--pink); padding-bottom:5px; font-weight:bold; color:var(--pink);">${m}월</div>` + mHtml;
+        }
+        document.getElementById('yearly-modal').style.display = 'flex';
+        document.getElementById('overlay').style.display = 'block';
+    };
+
+    // 나머지 함수들 (openModal, addEvent, closeAll 등은 이전과 동일)
     window.openModal = (d) => {
         selectedDate = d; editIndex = null; document.getElementById('event-input').value = '';
         document.getElementById('is-holiday').checked = false;
@@ -195,7 +241,6 @@
         document.getElementById('overlay').style.display = 'block';
         window.updateModalList();
     };
-
     window.updateModalList = () => {
         const div = document.getElementById('modal-list'); div.innerHTML = '';
         const events = data[selectedDate] || [];
@@ -207,7 +252,6 @@
         });
         if (events.length === 0) div.innerHTML = '<div style="text-align:center; color:#ccc; font-size:12px; padding:10px;">등록된 일정이 없습니다.</div>';
     };
-
     window.addEvent = async () => {
         const val = document.getElementById('event-input').value; if (!val) return;
         if (!data[selectedDate]) data[selectedDate] = [];
@@ -215,7 +259,6 @@
         if (editIndex !== null) data[selectedDate][editIndex] = ev; else data[selectedDate].push(ev);
         await setDoc(doc(db, "work_planner", "data"), data); window.closeAll();
     };
-
     window.applyPattern = async () => {
         const startDay = parseInt(document.getElementById('p-day').value), startIdx = parseInt(document.getElementById('p-idx').value);
         const lastDate = new Date(currentYear, currentMonth + 1, 0).getDate();
@@ -227,28 +270,7 @@
         }
         await setDoc(doc(db, "work_planner", "data"), data); window.closeAll();
     };
-
-    window.openYearlyView = () => {
-        const container = document.getElementById('yearly-list-container'); container.innerHTML = '';
-        document.getElementById('yearly-title').innerText = currentYear;
-        for (let m = 1; m <= 12; m++) {
-            let mHtml = '';
-            Object.keys(data).forEach(date => {
-                const [y, mm, d] = date.split('-').map(Number);
-                if (y === currentYear && mm === m) data[date].forEach(ev => mHtml += `<div style="display:flex; padding:5px; border-bottom:1px solid #eee; font-size:14px;"><span style="width:40px; font-weight:bold;">${d}일</span><span style="flex:1;">${ev.text}</span></div>`);
-            });
-            if (mHtml) container.innerHTML += `<div style="margin-top:10px; border-bottom:2px solid var(--pink); padding-bottom:5px; font-weight:bold; color:var(--pink);">${m}월</div>` + mHtml;
-        }
-        document.getElementById('yearly-modal').style.display = 'flex';
-        document.getElementById('overlay').style.display = 'block';
-    };
-
-    window.closeAll = () => { 
-        document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); 
-        document.getElementById('overlay').style.display = 'none';
-        document.querySelector('.memo-container').classList.remove('active');
-    };
-
+    window.closeAll = () => { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); document.getElementById('overlay').style.display = 'none'; document.querySelector('.memo-container').classList.remove('active'); };
     window.openPatternModal = () => { document.getElementById('pattern-modal').style.display = 'block'; document.getElementById('overlay').style.display = 'block'; };
     window.deleteEvent = async (i) => { data[selectedDate].splice(i, 1); await setDoc(doc(db, "work_planner", "data"), data); window.updateModalList(); };
     window.prepareEdit = (i) => { const ev = data[selectedDate][i]; document.getElementById('event-input').value = ev.text; document.getElementById('is-holiday').checked = ev.isHoliday; editIndex = i; };
@@ -256,7 +278,6 @@
     window.changeMonth = (n) => { currentMonth += n; if (currentMonth < 0) { currentMonth = 11; currentYear--; } else if (currentMonth > 11) { currentMonth = 0; currentYear++; } renderCalendar(); };
     window.goToday = () => { const n = new Date(); currentYear = n.getFullYear(); currentMonth = n.getMonth(); renderCalendar(); };
     window.toggleMemo = (e) => { if (window.innerWidth <= 768) { document.querySelector('.memo-container').classList.toggle('active'); document.getElementById('overlay').style.display = document.querySelector('.memo-container').classList.contains('active') ? 'block' : 'none'; } };
-
     document.getElementById('memo-area').addEventListener('input', (e) => { clearTimeout(memoTimer); memoTimer = setTimeout(() => setDoc(doc(db, "work_planner", "memo"), { text: e.target.value }), 800); });
     renderCalendar();
 </script>
