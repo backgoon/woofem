@@ -94,7 +94,7 @@
         <h3 id="modal-date-display" style="text-align: center; color: #333; margin-bottom: 20px;"></h3>
         <div id="modal-list" style="margin-bottom:20px; max-height:180px; overflow-y:auto; border: 1px solid #ddd; padding: 10px; border-radius: 12px; background: #fafafa;"></div>
         <div style="display: flex; flex-direction: column; gap: 10px;">
-            <input type="text" id="event-input" placeholder="일정 내용을 입력하세요" style="width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 10px; box-sizing: border-box;">
+            <textarea id="event-input" placeholder="일정 내용을 입력하세요" style="width: 100%; height: 80px; padding: 12px; border: 2px solid #eee; border-radius: 10px; box-sizing: border-box; resize: none; font-family: inherit; font-size: 14px; outline: none;"></textarea>
             <div style="display: flex; gap: 12px; justify-content: center; margin: 10px 0;">
                 <div class="color-btn" onclick="selectColor('#ffdce0', this)" style="background:#ffdce0; width:30px; height:30px; border-radius:50%; cursor:pointer; border:2px solid #333;"></div>
                 <div class="color-btn" onclick="selectColor('#e2f0cb', this)" style="background:#e2f0cb; width:30px; height:30px; border-radius:50%; cursor:pointer;"></div>
@@ -179,21 +179,19 @@
             const dateStr = `${currentYear}-${currentMonth+1}-${d}`, dayOfWeek = new Date(currentYear, currentMonth, d).getDay();
             const userEvents = data[dateStr] || [], isUserHoliday = userEvents.find(ev => ev.isHoliday);
             let holidayName = holidays[dateStr] || (isUserHoliday ? isUserHoliday.text : '');
+            
+            const baseClass = (dayOfWeek === 0 || holidayName) ? "day sun" : (dayOfWeek === 6 ? "day sat" : "day");
+            const finalClass = (currentYear === now.getFullYear() && currentMonth === now.getMonth() && d === now.getDate()) ? baseClass + " today" : baseClass;
 
-            let dayClass = "day";
-            if (dayOfWeek === 0 || holidayName) dayClass += " sun";
-            if (dayOfWeek === 6) dayClass += " sat";
-            if (currentYear === now.getFullYear() && currentMonth === now.getMonth() && d === now.getDate()) dayClass += " today";
+            const eventHtml = userEvents.filter(ev => !ev.isHoliday).map(ev => {
+                const bgColor = ev.isWork ? (cycleColors[ev.text] || '#eee') : (ev.color || '#eee');
+                return `<span class="event-tag ${ev.isWork ? 'work-tag' : ''}" style="background:${bgColor}; white-space: pre-wrap; display: block; margin-bottom: 2px;">${ev.text}</span>`;
+            }).join('');
 
-            grid.innerHTML += `<div class="${dayClass}" ondblclick="openModal('${dateStr}')">
+            grid.innerHTML += `<div class="${finalClass}" ondblclick="openModal('${dateStr}')">
                 <span class="date-num">${d}</span>
                 ${holidayName ? `<span class="holiday-label">${holidayName}</span>` : ''}
-                <div class="event-container">${userEvents.filter(ev => !ev.isHoliday).map(ev => {
-                /* 수정 부분 시작 */
-                const bgColor = ev.isWork ? cycleColors[ev.text] : (ev.color || '#eee');
-                return `<span class="event-tag ${ev.isWork ? 'work-tag' : ''}" style="background:${bgColor};">${ev.text}</span>`;
-                /* 수정 부분 끝 */
-            }).join('')}</div>
+                <div class="event-container">${eventHtml}</div>
             </div>`;
         }
     }
@@ -231,12 +229,9 @@
         const events = data[selectedDate] || [];
         events.forEach((ev, i) => {
             const displayText = ev.isWork ? `[근무] ${ev.text}` : ev.text;
-            const bgColor = ev.isWork ? cycleColors[ev.text] : (ev.color || '#eee');
-            
+            const bgColor = ev.isWork ? (cycleColors[ev.text] || '#eee') : (ev.color || '#eee');
             div.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; background:${bgColor}; padding:8px; margin-bottom:5px; border-radius:8px;">
-                <span onclick="prepareEdit(${i})" style="cursor:pointer; flex:1; font-weight:${ev.isWork ? '800' : '400'};">
-                    ${ev.isHoliday ? '🚩 ' : ''}${displayText}
-                </span>
+                <span onclick="prepareEdit(${i})" style="cursor:pointer; flex:1; font-weight:${ev.isWork ? '800' : '400'}; white-space: pre-wrap; word-break: break-all;">${ev.isHoliday ? '🚩 ' : ''}${displayText}</span>
                 <button onclick="deleteEvent(${i})" style="border:none; background:none; color:#999; cursor:pointer; font-size:18px;">&times;</button>
             </div>`;
         });
