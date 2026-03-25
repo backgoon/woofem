@@ -82,17 +82,17 @@
 /* 1. 모든 모달의 공통 규격 (상세 일정 모달이 잘 나오던 설정 기준) */
 .modal { 
     display: none; 
-    position: fixed; 
-    top: 50%; 
-    left: 50%; 
-    transform: translate(-50%, -50%); 
-    background: white; 
+    position: fixed !important; /* 무조건 화면 위에 띄움 */
+    top: 50% !important; 
+    left: 50% !important; 
+    transform: translate(-50%, -50%) !important; /* 정중앙 배치 */
+    background: white !important; 
     padding: 20px; 
     border-radius: 20px; 
-    z-index: 1100; 
+    z-index: 1200 !important; /* overlay보다 무조건 위 */
     width: 280px; 
     border: 3px solid var(--pink); 
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3); /* 그림자로 입체감 */
 }
 
 /* 연간 일정 전용 (홀브 일정과 동일하게 파란 테두리) */
