@@ -14,7 +14,7 @@
     
     body { font-family: 'Nanum Gothic', sans-serif; background: var(--soft-pink); margin: 0; padding: 10px; overflow-x: hidden; width: 100%; box-sizing: border-box; }
 
-    /* 헤더 및 메모장 레이아웃 */
+    /* 헤더 레이아웃 */
     .header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(255,133,161,0.1); margin-bottom: 15px; border: 1px solid var(--soft-pink); }
     .year-area { display: flex; align-items: center; white-space: nowrap; font-size: 28px; font-weight: 800; color: var(--blue); }
     .today-btn { padding: 5px 12px; cursor: pointer; background: white; color: var(--pink); border: 2px solid var(--pink); border-radius: 20px; font-weight: bold; font-size: 14px; margin-left: 8px; }
@@ -34,12 +34,12 @@
     .day .date-num { font-weight: bold; margin-bottom: 4px; }
     .holiday-label { font-size: 11px; font-weight: 800; display: block; margin-bottom: 3px; color: var(--sun); word-break: break-all; }
 
-    /* 일정 태그 스타일 복구 */
+    /* 일정 태그 */
     .event-container { display: flex; flex-wrap: wrap; gap: 3px; width: 100%; justify-content: flex-start; }
     .event-tag { display: block; padding: 3px 5px; border-radius: 4px; font-size: 11px; color: #333; line-height: 1.3; margin-bottom: 2px; width: 95%; word-break: break-all; white-space: pre-wrap; box-shadow: 0 1px 2px rgba(0,0,0,0.1); background-color: #eee; }
     .work-tag { border-left: 3px solid var(--blue); font-weight: 800; background: #f0f4f8 !important; }
 
-    /* 모달 스타일 복구 및 고정 */
+    /* 모달 사이즈 복구 (홀브 영상 기준: 가로 확장) */
     .modal { 
         display: none; 
         position: fixed !important; 
@@ -47,20 +47,21 @@
         left: 50% !important; 
         transform: translate(-50%, -50%) !important; 
         background: white !important; 
-        padding: 20px; 
+        padding: 25px; 
         border-radius: 20px; 
         z-index: 1500 !important; 
-        width: 280px; 
+        width: 380px; /* 가로 사이즈 확장 */
+        max-width: 90%;
         border: 3px solid var(--pink); 
-        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        box-shadow: 0 10px 50px rgba(0,0,0,0.4);
         box-sizing: border-box;
     }
     #pattern-modal { border-color: var(--blue) !important; }
-    #yearly-modal { width: 95% !important; max-width: 500px !important; height: 80vh !important; border-color: var(--blue) !important; overflow: hidden; display: none; flex-direction: column; }
+    #yearly-modal { width: 95% !important; max-width: 600px !important; height: 85vh !important; border-color: var(--blue) !important; overflow: hidden; display: none; flex-direction: column; }
 
-    .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(2px); z-index: 1400; }
+    .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(3px); z-index: 1400; }
 
-    /* 메모장 스타일 복구 */
+    /* 메모장 */
     .memo-container { position: relative; background: #e0f2f1; width: 450px; height: 180px; padding: 10px; border-left: 10px solid #b2dfdb; box-shadow: 5px 5px 15px rgba(0,0,0,0.1); cursor: text; }
     #memo-area { width: 100%; height: 100%; background: transparent; border: none; font-family: 'Nanum Gothic', sans-serif; font-size: 16px; font-weight: 800; line-height: 1.8; resize: none; outline: none; padding: 10px; box-sizing: border-box; overflow-y: auto; }
     
@@ -71,11 +72,12 @@
         .memo-container:not(.active)::before { content: '📝'; font-size: 24px; }
         .grid { grid-template-columns: repeat(7, 1fr); gap: 1px; }
         .day { min-height: 90px; padding: 3px; }
+        .modal { width: 90%; padding: 20px; }
     }
 
     .nav-control { display: flex; align-items: center; justify-content: center; gap: 15px; margin: 15px 0; }
     .nav-btn { padding: 8px 16px; cursor: pointer; background: var(--pink); color: white; border: none; border-radius: 8px; font-weight: bold; }
-    .add-btn { width: 100%; padding: 12px; background: var(--pink); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+    .add-btn { width: 100%; padding: 14px; background: var(--pink); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 16px; }
 </style>
 </head>
 <body>
@@ -99,50 +101,45 @@
     <div id="overlay" class="overlay" onclick="closeAll()"></div>
 
     <div id="modal" class="modal">
-        <h3 id="modal-date-display" style="text-align: center; color: #333; margin-bottom: 20px;"></h3>
-        <div style="font-size: 13px; color: #555; margin-bottom: 8px; font-weight: bold;">📅 등록된 일정</div>
-        <div id="modal-list" style="margin-bottom:20px; max-height:180px; overflow-y:auto; border: 1px solid #ddd; padding: 10px; border-radius: 12px; background: #fafafa;"></div>
+        <h3 id="modal-date-display" style="text-align: center; color: #333; margin-bottom: 20px; font-size: 20px;"></h3>
+        <div style="font-size: 14px; color: #555; margin-bottom: 10px; font-weight: bold;">📅 등록된 일정 목록</div>
+        <div id="modal-list" style="margin-bottom:20px; max-height:200px; overflow-y:auto; border: 1px solid #ddd; padding: 12px; border-radius: 12px; background: #fafafa;"></div>
         
-        <div style="display: flex; flex-direction: column; gap: 10px;">
-            <input type="text" id="event-input" placeholder="일정 내용을 입력하세요" style="width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 10px; box-sizing: border-box;">
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            <input type="text" id="event-input" placeholder="일정 내용을 입력하세요" style="width: 100%; padding: 14px; border: 2px solid #eee; border-radius: 12px; box-sizing: border-box; font-size: 15px;">
             
-            <div style="display: flex; gap: 12px; justify-content: center; margin: 10px 0;">
-                <div class="color-btn" onclick="selectColor('#ffdce0', this)" style="background:#ffdce0; width:35px; height:35px; border-radius:50%; cursor:pointer; border:2px solid #333;"></div>
-                <div class="color-btn" onclick="selectColor('#e2f0cb', this)" style="background:#e2f0cb; width:35px; height:35px; border-radius:50%; cursor:pointer;"></div>
-                <div class="color-btn" onclick="selectColor('#c7ceea', this)" style="background:#c7ceea; width:35px; height:35px; border-radius:50%; cursor:pointer;"></div>
-                <div class="color-btn" onclick="selectColor('#f7d1ba', this)" style="background:#f7d1ba; width:35px; height:35px; border-radius:50%; cursor:pointer;"></div>
+            <div style="display: flex; gap: 15px; justify-content: center; margin: 5px 0;">
+                <div class="color-btn" onclick="selectColor('#ffdce0', this)" style="background:#ffdce0; width:38px; height:38px; border-radius:50%; cursor:pointer; border:2px solid #333;"></div>
+                <div class="color-btn" onclick="selectColor('#e2f0cb', this)" style="background:#e2f0cb; width:38px; height:38px; border-radius:50%; cursor:pointer;"></div>
+                <div class="color-btn" onclick="selectColor('#c7ceea', this)" style="background:#c7ceea; width:38px; height:38px; border-radius:50%; cursor:pointer;"></div>
+                <div class="color-btn" onclick="selectColor('#f7d1ba', this)" style="background:#f7d1ba; width:38px; height:38px; border-radius:50%; cursor:pointer;"></div>
             </div>
             
-            <div style="display: flex; align-items: center; gap: 8px; background: #fff4f4; padding: 8px; border-radius: 8px;">
-                <input type="checkbox" id="is-holiday" style="width:18px; height:18px;">
-                <label for="is-holiday" style="color: #e53935; font-weight: bold; font-size: 13px;">공휴일 지정</label>
+            <div style="display: flex; align-items: center; gap: 10px; background: #fff4f4; padding: 12px; border-radius: 10px; cursor: pointer;" onclick="document.getElementById('is-holiday').click()">
+                <input type="checkbox" id="is-holiday" style="width:20px; height:20px;">
+                <label for="is-holiday" style="color: #e53935; font-weight: bold; font-size: 14px; cursor: pointer;">공휴일(빨간날)로 지정</label>
             </div>
             
-            <button class="add-btn" onclick="addEvent()">추가 / 수정 저장</button>
-            <div onclick="closeAll()" style="text-align:center; margin-top:15px; color:#aaa; cursor:pointer; font-size:14px;">취소하고 닫기</div>
+            <button class="add-btn" onclick="addEvent()">일정 저장하기</button>
+            <div onclick="closeAll()" style="text-align:center; margin-top:10px; color:#aaa; cursor:pointer; font-size:14px;">창 닫기</div>
         </div>
     </div>
 
     <div id="pattern-modal" class="modal">
-        <h3 style="text-align: center; color: var(--blue);">교대 근무 패턴 생성</h3>
-        <div style="margin-bottom: 15px;">
-            시작 일자: <input type="number" id="p-day" value="1" min="1" max="31" style="width: 50px; padding: 5px;"> 일
-        </div>
-        <div style="margin-bottom: 20px;">
-            시작 근무: 
-            <select id="p-idx" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
-                <option value="0">주간(주)</option><option value="2">야간(야)</option>
-                <option value="3">숙직(숙)</option><option value="4">비번(비)</option>
-            </select>
-        </div>
-        <button onclick="applyPattern()" style="width: 100%; padding: 12px; background: var(--blue); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer;">패턴 일괄 적용</button>
-        <button onclick="closeAll()" style="width:100%; margin-top:15px; border:none; background:transparent; color: #999; cursor: pointer;">닫기</button>
+        <h3 style="text-align: center; color: var(--blue);">교대 근무 패턴 적용</h3>
+        <div style="margin-bottom: 20px;">시작일: <input type="number" id="p-day" value="1" min="1" max="31" style="width: 60px; padding: 8px;"> 일</div>
+        <select id="p-idx" style="width: 100%; padding: 12px; border-radius: 10px; margin-bottom: 20px;">
+            <option value="0">주(1)-주-야-숙-비-비-야-숙</option>
+            <option value="2">야(3)-숙-비-비-야-숙-주-주</option>
+        </select>
+        <button class="add-btn" style="background:var(--blue);" onclick="applyPattern()">패턴 일괄 적용</button>
+        <div onclick="closeAll()" style="text-align:center; margin-top:15px; color:#aaa; cursor:pointer;">취소</div>
     </div>
 
     <div id="yearly-modal" class="modal">
         <h2 style="text-align: center; color: var(--blue); margin-top: 0;">📅 <span id="yearly-title"></span>년 전체 일정</h2>
-        <div id="yearly-list-container" style="flex: 1; overflow-y: auto; padding: 10px; background: #f9f9f9; border-radius: 10px;"></div>
-        <button onclick="closeAll()" style="width: 100%; padding: 15px; margin-top: 10px; border: none; background: var(--pink); color: white; border-radius: 10px; font-weight: bold; cursor: pointer;">닫기</button>
+        <div id="yearly-list-container" style="flex: 1; overflow-y: auto; padding: 15px; background: #f9f9f9; border-radius: 12px;"></div>
+        <button onclick="closeAll()" style="width: 100%; padding: 15px; margin-top: 15px; border: none; background: var(--pink); color: white; border-radius: 12px; font-weight: bold; cursor: pointer;">닫기</button>
     </div>
 
 <script type="module">
@@ -158,10 +155,21 @@
     const cycle = ["주", "주", "야", "숙", "비", "비", "야", "숙"];
     const cycleColors = { "주": "#e3f2fd", "야": "#ede7f6", "숙": "#fff9c4", "비": "#e8f5e9" };
 
-    // 고정 공휴일 데이터 (복구)
-    const holidays = {
-        "1-1": "신정", "3-1": "삼일절", "5-5": "어린이날", "6-6": "현충일", 
-        "8-15": "광복절", "10-3": "개천절", "10-9": "한글날", "12-25": "성탄절"
+    // [홀브 이식] 음력/양력 공휴일 계산기 로직
+    const getHolidays = (year) => {
+        // 양력 고정 공휴일 (승일 님 요청: '삼일절' 등 한글 명칭 정확히)
+        const solar = {
+            "1-1": "신정", "3-1": "삼일절", "5-5": "어린이날", "6-6": "현충일", 
+            "8-15": "광복절", "10-3": "개천절", "10-9": "한글날", "12-25": "성탄절"
+        };
+        // 음력 명절 (승일 님 요청: 설날, 추석 등 포함) - 2026년 기준 계산값
+        // 실제 운영시는 음력 변환 라이브러리나 API가 필요하지만, 우선 2026년 주요 명절 하드코딩
+        const lunar2026 = {
+            "2-16": "설날 연휴", "2-17": "설날", "2-18": "설날 연휴",
+            "5-24": "부처님오신날", 
+            "9-24": "추석 연휴", "9-25": "추석", "9-26": "추석 연휴"
+        };
+        return year === 2026 ? { ...solar, ...lunar2026 } : solar;
     };
 
     onSnapshot(doc(db, "work_planner", "data"), (snap) => { if (snap.exists()) { data = snap.data(); renderCalendar(); } });
@@ -176,12 +184,12 @@
         ['일','월','화','수','목','금','토'].forEach(d => grid.innerHTML += `<div class="day-header">${d}</div>`);
         for(let i=0; i<firstDay; i++) grid.innerHTML += `<div class="day"></div>`;
 
+        const holidayList = getHolidays(currentYear);
         for(let d=1; d<=lastDate; d++) {
             const dateStr = `${currentYear}-${currentMonth+1}-${d}`, dayOfWeek = new Date(currentYear, currentMonth, d).getDay();
             const events = data[dateStr] || [];
             
-            // 고정 공휴일 체크 및 사용자 지정 공휴일 체크
-            const fixHoliday = holidays[`${currentMonth+1}-${d}`];
+            const fixHoliday = holidayList[`${currentMonth+1}-${d}`];
             const userHoliday = events.find(ev => ev.isHoliday);
             const holidayName = fixHoliday || (userHoliday ? userHoliday.text : "");
 
@@ -203,73 +211,62 @@
         }
     }
 
-    window.openYearlyView = () => {
-        const container = document.getElementById('yearly-list-container'); container.innerHTML = '';
-        document.getElementById('yearly-title').innerText = currentYear;
-        for (let m = 1; m <= 12; m++) {
-            let mHtml = '';
-            const daysInMonth = new Date(currentYear, m, 0).getDate();
-            for(let d=1; d<=daysInMonth; d++) {
-                const dateStr = `${currentYear}-${m}-${d}`;
-                const fixH = holidays[`${m}-${d}`];
-                const dayEvents = data[dateStr] || [];
-                
-                let combined = [];
-                if(fixH) combined.push(`<span style="color:red; font-weight:bold;">[${fixH}]</span>`);
-                dayEvents.forEach(ev => combined.push(ev.isHoliday ? `<span style="color:red;">[${ev.text}]</span>` : ev.text));
-
-                if (combined.length > 0) {
-                    mHtml += `<div style="display:flex; padding:5px; border-bottom:1px solid #eee; font-size:14px;">
-                        <span style="width:40px; font-weight:bold;">${d}일</span>
-                        <span style="flex:1;">${combined.join(', ')}</span>
-                    </div>`;
-                }
-            }
-            if (mHtml) container.innerHTML += `<div style="margin-top:10px; border-bottom:2px solid var(--pink); padding-bottom:5px; font-weight:bold; color:var(--pink);">${m}월</div>` + mHtml;
-        }
-        document.getElementById('yearly-modal').style.display = 'flex';
-        document.getElementById('overlay').style.display = 'block';
-    };
-
-    // 나머지 함수들 (openModal, addEvent, closeAll 등은 이전과 동일)
     window.openModal = (d) => {
         selectedDate = d; editIndex = null; document.getElementById('event-input').value = '';
         document.getElementById('is-holiday').checked = false;
         const p = d.split('-'); 
-        document.getElementById('modal-date-display').innerText = `${p[1]}월 ${p[2]}일`;
+        document.getElementById('modal-date-display').innerText = `${p[0]}년 ${p[1]}월 ${p[2]}일`;
         document.getElementById('modal').style.display = 'block';
         document.getElementById('overlay').style.display = 'block';
         window.updateModalList();
     };
+
     window.updateModalList = () => {
         const div = document.getElementById('modal-list'); div.innerHTML = '';
         const events = data[selectedDate] || [];
         events.forEach((ev, i) => {
             const icon = ev.isHoliday ? `<span style="color:#e53935; margin-right:5px;">🚩</span>` : '';
-            div.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; background:${ev.isHoliday ? '#fff5f5' : (ev.color || '#eee')}; padding:8px; margin-bottom:5px; border-radius:8px;">
-                <span onclick="prepareEdit(${i})" style="cursor:pointer; flex:1;">${icon}${ev.isWork?'[근무] ':''}${ev.text}</span>
-                <button onclick="deleteEvent(${i})" style="border:none; background:none; color:#999; cursor:pointer; font-size:18px;">&times;</button></div>`;
+            div.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; background:${ev.isHoliday ? '#fff5f5' : (ev.color || '#eee')}; padding:10px; margin-bottom:8px; border-radius:10px; border:1px solid #eee;">
+                <span onclick="prepareEdit(${i})" style="cursor:pointer; flex:1; font-size:15px;">${icon}${ev.isWork?'[근무] ':''}${ev.text}</span>
+                <button onclick="deleteEvent(${i})" style="border:none; background:none; color:#ff85a1; cursor:pointer; font-size:22px; font-weight:bold;">&times;</button></div>`;
         });
-        if (events.length === 0) div.innerHTML = '<div style="text-align:center; color:#ccc; font-size:12px; padding:10px;">등록된 일정이 없습니다.</div>';
+        if (events.length === 0) div.innerHTML = '<div style="text-align:center; color:#ccc; font-size:14px; padding:20px;">등록된 일정이 없습니다.</div>';
     };
+
     window.addEvent = async () => {
         const val = document.getElementById('event-input').value; if (!val) return;
         if (!data[selectedDate]) data[selectedDate] = [];
         const ev = { text: val, color: selectedColor, isHoliday: document.getElementById('is-holiday').checked, isWork: false };
         if (editIndex !== null) data[selectedDate][editIndex] = ev; else data[selectedDate].push(ev);
-        await setDoc(doc(db, "work_planner", "data"), data); window.closeAll();
+        await setDoc(doc(db, "work_planner", "data"), data); 
+        editIndex = null; document.getElementById('event-input').value = ''; 
+        window.updateModalList(); // 홀브 방식: 저장 후 바로 목록 갱신
     };
-    window.applyPattern = async () => {
-        const startDay = parseInt(document.getElementById('p-day').value), startIdx = parseInt(document.getElementById('p-idx').value);
-        const lastDate = new Date(currentYear, currentMonth + 1, 0).getDate();
-        for (let d = startDay, idx = startIdx; d <= lastDate; d++, idx++) {
-            const ds = `${currentYear}-${currentMonth+1}-${d}`;
-            data[ds] = (data[ds] || []).filter(e => !e.isWork);
-            const type = cycle[idx % 8];
-            data[ds].unshift({ text: type, color: cycleColors[type], isWork: true, isHoliday: false });
+
+    window.openYearlyView = () => {
+        const container = document.getElementById('yearly-list-container'); container.innerHTML = '';
+        document.getElementById('yearly-title').innerText = currentYear;
+        const holidayList = getHolidays(currentYear);
+        for (let m = 1; m <= 12; m++) {
+            let mHtml = '';
+            const daysInMonth = new Date(currentYear, m, 0).getDate();
+            for(let d=1; d<=daysInMonth; d++) {
+                const dateStr = `${currentYear}-${m}-${d}`;
+                const fixH = holidayList[`${m}-${d}`];
+                const dayEvents = data[dateStr] || [];
+                let combined = [];
+                if(fixH) combined.push(`<span style="color:red; font-weight:bold;">[${fixH}]</span>`);
+                dayEvents.forEach(ev => combined.push(ev.isHoliday ? `<span style="color:red; font-weight:bold;">[${ev.text}]</span>` : ev.text));
+                if (combined.length > 0) {
+                    mHtml += `<div style="display:flex; padding:8px; border-bottom:1px solid #eee; font-size:15px;"><span style="width:50px; font-weight:800;">${d}일</span><span style="flex:1;">${combined.join(', ')}</span></div>`;
+                }
+            }
+            if (mHtml) container.innerHTML += `<div style="margin-top:15px; border-bottom:3px solid var(--pink); padding-bottom:5px; font-weight:bold; color:var(--pink); font-size:18px;">${m}월</div>` + mHtml;
         }
-        await setDoc(doc(db, "work_planner", "data"), data); window.closeAll();
+        document.getElementById('yearly-modal').style.display = 'flex';
+        document.getElementById('overlay').style.display = 'block';
     };
+
     window.closeAll = () => { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); document.getElementById('overlay').style.display = 'none'; document.querySelector('.memo-container').classList.remove('active'); };
     window.openPatternModal = () => { document.getElementById('pattern-modal').style.display = 'block'; document.getElementById('overlay').style.display = 'block'; };
     window.deleteEvent = async (i) => { data[selectedDate].splice(i, 1); await setDoc(doc(db, "work_planner", "data"), data); window.updateModalList(); };
