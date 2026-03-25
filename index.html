@@ -78,19 +78,28 @@
     width: 280px; 
     border: 3px solid var(--pink); 
 } */
-    .modal { 
-    /* 기존 스타일 유지 */
-    position: fixed; 
-    top: 50% !important; /* 브라우저 좌표 강제 고정 */
+.modal { 
+    display: none; 
+    position: fixed !important; /* 화면에 박제 */
+    top: 50% !important; 
     left: 50% !important; 
-    transform: translate(-50%, -50%) !important; 
-    z-index: 1010 !important; /* overlay(999) 위로 확실히 올림 */
-    display: none; /* JS에서 block으로 바꿀 때까지 대기 */
+    transform: translate(-50%, -50%) !important; /* 정확히 중앙 */
+    background: white !important; 
+    z-index: 2000 !important; /* overlay(999)보다 압도적으로 높게 */
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5); /* 그림자로 존재감 표시 */
     
-    /* [추가] 박스가 0x0으로 찌그러지는 것 방지 */
-    min-width: 280px; 
-    min-height: 100px;
-    background: white !important;
+    /* 승일 님 기존 수치 유지 */
+    padding: 20px; 
+    border-radius: 20px; 
+    width: 280px; 
+    border: 3px solid var(--pink); 
+}
+
+/* 연간 일정은 넓어야 하니 별도 지정 */
+#yearly-modal {
+    width: 90% !important;
+    max-width: 500px !important;
+    height: 80vh !important;
 }
 
 .add-btn { 
@@ -117,7 +126,7 @@
         .day { min-height: 90px; padding: 3px; }
     }
 
-#yearly-modal {
+/* #yearly-modal {
     display: none; 
     position: fixed; 
     top: 50%; 
@@ -129,7 +138,7 @@
     z-index: 1001; 
     border: 3px solid var(--blue); /* 연간 일정은 파란색 테두리로 구분 */
     box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-}
+} */
     /* [추가 기능] 근무 패턴용 스타일 */
     .pattern-btn { background: var(--blue); color: white; border: 2px solid var(--blue); border-radius: 20px; padding: 5px 12px; font-weight: bold; font-size: 14px; cursor: pointer; margin-left: 5px; }
     .work-tag { border-left: 3px solid var(--blue); font-weight: 800; background: #f0f4f8 !important; }
