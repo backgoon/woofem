@@ -144,7 +144,7 @@ const bdbConfig = {
   appId: "$BDB_APP_ID"
 };
     
-    const app = initializeApp(firebaseConfig);
+    const app = initializeApp(bdbConfig);
     const db = getFirestore(app);
 
     let currentYear = new Date().getFullYear(), currentMonth = new Date().getMonth();
