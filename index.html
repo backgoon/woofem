@@ -63,9 +63,9 @@
     
     /* 모달 */
 /* --- [여기에 붙여넣으세요] --- */
-:root { --pink: #ff85a1; } /* 핑크 변수 정의 */
+/* :root { --pink: #ff85a1; } /* 핑크 변수 정의 */ */
 
-.modal { 
+/* .modal { 
     display: none; 
     position: fixed; 
     top: 50%; 
@@ -77,6 +77,20 @@
     z-index: 1001; 
     width: 280px; 
     border: 3px solid var(--pink); 
+} */
+    .modal { 
+    /* 기존 스타일 유지 */
+    position: fixed; 
+    top: 50% !important; /* 브라우저 좌표 강제 고정 */
+    left: 50% !important; 
+    transform: translate(-50%, -50%) !important; 
+    z-index: 1010 !important; /* overlay(999) 위로 확실히 올림 */
+    display: none; /* JS에서 block으로 바꿀 때까지 대기 */
+    
+    /* [추가] 박스가 0x0으로 찌그러지는 것 방지 */
+    min-width: 280px; 
+    min-height: 100px;
+    background: white !important;
 }
 
 .add-btn { 
