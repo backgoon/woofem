@@ -280,8 +280,11 @@ window.updateModalList = () => {
     
     // [수정] 정렬 로직: 공휴일(isHoliday) > 근무(isWork) > 일반 일정 순서
     const sortedEvents = [...events].sort((a, b) => {
-        if (a.isHoliday !== b.isHoliday) return b.isHoliday ? -1 : 1;
-        if (a.isWork !== b.isWork) return b.isWork ? -1 : 1;
+        // 1. 공휴일 우선 (isHoliday가 true인 것이 위로)
+        if (a.isHoliday !== b.isHoliday) return a.isHoliday ? -1 : 1;
+        // 2. 그 다음 근무 우선 (isWork가 true인 것이 위로)
+        if (a.isWork !== b.isWork) return a.isWork ? -1 : 1;
+        // 3. 나머지는 그대로
         return 0;
     });
 
