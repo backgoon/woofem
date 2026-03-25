@@ -271,31 +271,43 @@
     };
 
     window.openModal = (d) => { selectedDate = d; editIndex = null; document.getElementById('event-input').value = ''; document.getElementById('is-holiday').checked = false; const p = d.split('-'); document.getElementById('modal-date-display').innerText = `${p[1]}월 ${p[2]}일`; document.getElementById('modal').style.display = 'block'; document.getElementById('overlay').style.display = 'block'; window.updateModalList(); };
-    window.updateModalList = () => {
-        const div = document.getElementById('modal-list'); div.innerHTML = '';
-        const events = [...(data[selectedDate] || [])]; // 원본 데이터 보존을 위해 복사본 생성
+window.updateModalList = () => {
+    const div = document.getElementById('modal-list');
+    div.innerHTML = '';
     
-        // 1. 정렬 로직: 공휴일(🚩) -> 근무([근무]) -> 일반 일정 순서
-        events.sort((a, b) => {
-            if (a.isHoliday !== b.isHoliday) return b.isHoliday ? 1 : -1;
-            if (a.isWork !== b.isWork) return b.isWork ? 1 : -1;
-            return 0;
-        });
+    // 현재 날짜의 일정 가져오기 (없으면 빈 배열)
+    const events = data[selectedDate] || [];
     
-        events.forEach((ev, i) => {
-            const displayText = ev.isWork ? `[근무] ${ev.text}` : ev.text;
-        const task = ev.text.trim();
-        const bgColor = ev.isWork ? (cycleColors[task] || ev.color || '#eee') : (ev.isHoliday ? '#fff5f5' : (ev.color || '#eee'));
+    // [수정] 정렬 로직: 공휴일(isHoliday) > 근무(isWork) > 일반 일정 순서
+    const sortedEvents = [...events].sort((a, b) => {
+        if (a.isHoliday !== b.isHoliday) return b.isHoliday ? -1 : 1;
+        if (a.isWork !== b.isWork) return b.isWork ? -1 : 1;
+        return 0;
+    });
+
+    sortedEvents.forEach((ev) => {
+        // [수정] [근무] 문구 추가 및 아이콘 설정
+        const icon = ev.isHoliday ? `<span style="color:#e53935; margin-right:5px;">🚩</span>` : '';
+        const displayText = ev.isWork ? `[근무] ${ev.text}` : ev.text;
         
+        // 실제 데이터(data[selectedDate])에서의 원래 인덱스를 찾아야 삭제가 정확함
+        const originalIndex = events.indexOf(ev);
+
         div.innerHTML += `
-            <div style="display:flex; justify-content:space-between; align-items:center; background:${bgColor} !important; padding:8px; margin-bottom:8px; border-radius:12px; height:45px; box-sizing:border-box; border: ${ev.isHoliday ? '1px solid #ffcdd2' : '1px solid #eee'};">
-                <span onclick="prepareEdit(${i})" style="cursor:pointer; flex:1; text-align: left; font-family: inherit; font-size: 14px; font-weight:${ev.isHoliday || ev.isWork ? 'bold' : 'normal'}; color:${ev.isHoliday ? '#c62828' : '#333'}; white-space: pre-wrap; word-break: break-all; line-height: 1.2;">
-                    ${ev.isHoliday ? '🚩 ' : ''}${displayText}
+            <div style="display:flex; justify-content:space-between; align-items:center; 
+                        background:${ev.isHoliday ? '#fff5f5' : (ev.color || '#eee')}; 
+                        padding:8px; margin-bottom:5px; border-radius:8px; border: ${ev.isHoliday ? '1px solid #ffcdd2' : 'none'};">
+                <span onclick="prepareEdit(${originalIndex})" style="cursor:pointer; flex:1; font-weight:${ev.isHoliday ? 'bold' : 'normal'}; color:${ev.isHoliday ? '#c62828' : '#333'};">
+                    ${icon}${displayText}
                 </span>
-                <button onclick="deleteEvent(${i})" style="border:none; background:none; color:#999; cursor:pointer; font-size:18px; padding:0 5px; display:flex; align-items:center;">&times;</button>
+                <button onclick="deleteEvent(${originalIndex})" style="border:none; background:none; color:#999; cursor:pointer; font-size:18px; padding:0 5px;">&times;</button>
             </div>`;
-        });
-    };
+    });
+
+    if (sortedEvents.length === 0) {
+        div.innerHTML = '<div style="text-align:center; color:#ccc; font-size:12px; padding:10px;">등록된 일정이 없습니다.</div>';
+    }
+};
 
     window.deleteEvent = async (i) => { data[selectedDate].splice(i, 1); await setDoc(doc(db, "work_planner", "data"), data); window.updateModalList(); };
     window.prepareEdit = (i) => { const ev = data[selectedDate][i]; document.getElementById('event-input').value = ev.text; document.getElementById('is-holiday').checked = ev.isHoliday; editIndex = i; };
