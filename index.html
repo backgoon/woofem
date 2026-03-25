@@ -62,8 +62,32 @@
     .nav-btn { padding: 8px 16px; cursor: pointer; background: var(--pink); color: white; border: none; border-radius: 8px; font-weight: bold; }
     
     /* 모달 */
-    .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 20px; z-index: 1001; width: 280px; border: 3px solid var(--pink); }
-    .add-btn { width: 100%; padding: 12px; background: var(--pink); color: white; border: none; border-radius: 10px; font-weight: bold; }
+/* --- [여기에 붙여넣으세요] --- */
+.modal { 
+    display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+    background: white; padding: 25px; border-radius: 24px; z-index: 1001; 
+    width: 320px; border: none; box-shadow: 0 10px 40px rgba(0,0,0,0.1); 
+}
+#modal-date-display { font-size: 22px; font-weight: 800; margin-bottom: 20px; color: #333; text-align: center; }
+#modal-list { border: 1px solid #f0f0f0; padding: 10px; border-radius: 16px; background: #fff; margin-bottom: 15px; }
+
+textarea#event-input { 
+    width: 100%; height: 45px; padding: 12px; border: 1.5px solid #eee; border-radius: 12px; 
+    box-sizing: border-box; resize: none; font-family: inherit; font-size: 14px; 
+    outline: none; transition: border 0.2s; margin-bottom: 15px;
+}
+textarea#event-input:focus { border-color: #ff85a1; }
+
+.holiday-box { 
+    display: flex; align-items: center; gap: 10px; background: #fff5f5; 
+    padding: 12px; border-radius: 12px; margin-bottom: 15px;
+}
+
+.add-btn { 
+    width: 100%; padding: 15px; background: #333; color: white; border: none; 
+    border-radius: 14px; font-weight: bold; font-size: 16px; cursor: pointer;
+}
+/* -------------------------- */
     .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); backdrop-filter: blur(2px); z-index: 999; }
 
     /* [유지] 모바일 대응 */
@@ -106,24 +130,27 @@
     <div id="overlay" class="overlay" onclick="closeAll()"></div>
 
     <div id="modal" class="modal">
-        <h3 id="modal-date-display" style="text-align: center; color: #333; margin-bottom: 20px;"></h3>
-        <div id="modal-list" style="margin-bottom:20px; max-height:180px; overflow-y:auto; border: 1px solid #ddd; padding: 10px; border-radius: 12px; background: #fafafa;"></div>
-        <div style="display: flex; flex-direction: column; gap: 10px;">
-            <textarea id="event-input" placeholder="일정 내용을 입력하세요" 
-                      style="width: 100%; height: 35px; padding: 8px 12px; border: 2px solid #eee; border-radius: 10px; box-sizing: border-box; resize: none; font-family: inherit; font-size: 13px; outline: none; line-height: 1.2;"></textarea>
-            <div style="display: flex; gap: 12px; justify-content: center; margin: 10px 0;">
-                <div class="color-btn" onclick="selectColor('#ffdce0', this)" style="background:#ffdce0; width:30px; height:30px; border-radius:50%; cursor:pointer; border:2px solid #333;"></div>
-                <div class="color-btn" onclick="selectColor('#e2f0cb', this)" style="background:#e2f0cb; width:30px; height:30px; border-radius:50%; cursor:pointer;"></div>
-                <div class="color-btn" onclick="selectColor('#c7ceea', this)" style="background:#c7ceea; width:30px; height:30px; border-radius:50%; cursor:pointer;"></div>
-                <div class="color-btn" onclick="selectColor('#f7d1ba', this)" style="background:#f7d1ba; width:30px; height:30px; border-radius:50%; cursor:pointer;"></div>
-            </div>
-            <div style="display: flex; align-items: center; gap: 8px; background: #fff4f4; padding: 8px; border-radius: 8px;">
-                <input type="checkbox" id="is-holiday" style="width:18px; height:18px;">
-                <label for="is-holiday" style="color: #e53935; font-weight: bold; font-size: 13px;">이 일정을 공휴일(빨간날)로 지정</label>
-            </div>
-            <button class="add-btn" onclick="addEvent()" style="background: #333;">저장하기</button>
+        <div id="modal-date-display"></div>
+        
+        <div style="font-size: 13px; color: #666; margin-bottom: 8px;">📅 등록된 일정</div>
+        <div id="modal-list"></div>
+    
+        <textarea id="event-input" placeholder="일정 내용을 입력하세요"></textarea>
+    
+        <div style="display: flex; gap: 15px; justify-content: center; margin-bottom: 20px;">
+            <div class="color-btn" onclick="selectColor('#ffdce0', this)" style="background:#ffdce0; width:35px; height:35px; border-radius:50%; cursor:pointer; border:2px solid #333;"></div>
+            <div class="color-btn" onclick="selectColor('#e2f0cb', this)" style="background:#e2f0cb; width:35px; height:35px; border-radius:50%; cursor:pointer;"></div>
+            <div class="color-btn" onclick="selectColor('#c7ceea', this)" style="background:#c7ceea; width:35px; height:35px; border-radius:50%; cursor:pointer;"></div>
+            <div class="color-btn" onclick="selectColor('#f7d1ba', this)" style="background:#f7d1ba; width:35px; height:35px; border-radius:50%; cursor:pointer;"></div>
         </div>
-        <button onclick="closeAll()" style="width:100%; margin-top:15px; border:none; background:transparent; color: #999; cursor:pointer;">닫기</button>
+    
+        <div class="holiday-box">
+            <input type="checkbox" id="is-holiday" style="width:18px; height:18px; cursor:pointer;">
+            <label for="is-holiday" style="color: #e53935; font-weight: bold; font-size: 13px; cursor:pointer;">이 일정을 공휴일(빨간날)로 지정</label>
+        </div>
+    
+        <button class="add-btn" onclick="addEvent()">추가 / 수정 저장</button>
+        <div onclick="closeAll()" style="text-align:center; margin-top:15px; color:#aaa; cursor:pointer; font-size:14px;">취소하고 닫기</div>
     </div>
 
     <div id="pattern-modal" class="modal" style="border-color: var(--blue);">
@@ -260,11 +287,11 @@
             
             // padding을 4px로 줄이고, font-size를 12px로 낮춰 높이를 압축함
             div.innerHTML += `
-            <div style="display:flex; justify-content:space-between; align-items:center; background-color:${bgColor} !important; padding:2px 8px; margin-bottom:2px; border-radius:6px; min-height:32px;">
-                <span onclick="prepareEdit(${i})" style="cursor:pointer; flex:1; font-weight:${ev.isWork ? '800' : '400'}; font-size:12px; white-space: pre-wrap; word-break: break-all; line-height: 1.1;">
+            <div style="display:flex; justify-content:space-between; align-items:center; background-color:${bgColor} !important; padding:10px 12px; margin-bottom:8px; border-radius:12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                <span onclick="prepareEdit(${i})" style="cursor:pointer; flex:1; font-weight:${ev.isWork ? '800' : '400'}; font-size:14px; color:#333; white-space: pre-wrap;">
                     ${ev.isHoliday ? '🚩 ' : ''}${displayText}
                 </span>
-                <button onclick="deleteEvent(${i})" style="border:none; background:none; color:#999; cursor:pointer; font-size:16px; padding:0 2px;">&times;</button>
+                <button onclick="deleteEvent(${i})" style="border:none; background:none; color:#bbb; cursor:pointer; font-size:18px;">&times;</button>
             </div>`;
         });
     };
