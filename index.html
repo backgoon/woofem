@@ -166,7 +166,8 @@
         <div onclick="closeAll()" style="text-align:center; margin-top:15px; color:#aaa; cursor:pointer; font-size:14px;">취소하고 닫기</div>
     </div>
 
-    <div id="pattern-modal" class="modal" style="border-color: var(--blue);">
+    <!-- <div id="pattern-modal" class="modal" style="border-color: var(--blue);"> -->
+    <div id="pattern-modal" class="modal" style="display: none; border-color: var(--blue);">
         <h3 style="text-align: center; color: var(--blue);">교대 근무 패턴 생성</h3>
         <div style="margin-bottom: 15px;">
             시작 일자: <input type="number" id="p-day" value="1" min="1" max="31" style="width: 50px; padding: 5px;"> 일
@@ -379,7 +380,10 @@ window.closeYearlyView = () => {
     document.getElementById('yearly-modal').style.display = 'none';
     document.getElementById('overlay').style.display = 'none';
 };
-    window.openPatternModal = () => { document.getElementById('pattern-modal').style.display = 'block'; document.getElementById('overlay').style.display = 'block'; };
+    window.openPatternModal = () => { 
+        document.getElementById('pattern-modal').style.display = 'block';
+         document.getElementById('overlay').style.display = 'block'; 
+    };
     window.selectColor = (c, el) => { selectedColor = c; document.querySelectorAll('.color-btn').forEach(b => b.style.border = 'none'); el.style.border = '2px solid #333'; };
     window.changeMonth = (n) => { currentMonth += n; if (currentMonth < 0) { currentMonth = 11; currentYear--; } else if (currentMonth > 11) { currentMonth = 0; currentYear++; } renderCalendar(); };
     window.goToday = () => { const n = new Date(); currentYear = n.getFullYear(); currentMonth = n.getMonth(); renderCalendar(); };
