@@ -243,18 +243,28 @@
     window.openModal = (d) => { selectedDate = d; editIndex = null; document.getElementById('event-input').value = ''; document.getElementById('is-holiday').checked = false; const p = d.split('-'); document.getElementById('modal-date-display').innerText = `${p[1]}월 ${p[2]}일`; document.getElementById('modal').style.display = 'block'; document.getElementById('overlay').style.display = 'block'; window.updateModalList(); };
     window.updateModalList = () => {
         const div = document.getElementById('modal-list'); div.innerHTML = '';
-        const events = data[selectedDate] || [];
+        const events = [...(data[selectedDate] || [])]; // 원본 데이터 보존을 위해 복사본 생성
+    
+        // 1. 정렬 로직: 공휴일(🚩) -> 근무([근무]) -> 일반 일정 순서
+        events.sort((a, b) => {
+            if (a.isHoliday !== b.isHoliday) return b.isHoliday ? 1 : -1;
+            if (a.isWork !== b.isWork) return b.isWork ? 1 : -1;
+            return 0;
+        });
+    
         events.forEach((ev, i) => {
             const displayText = ev.isWork ? `[근무] ${ev.text}` : ev.text;
             const task = ev.text.trim();
             const bgColor = ev.isWork ? (cycleColors[task] || ev.color || '#eee') : (ev.color || '#eee');
             
-            div.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; background-color:${bgColor} !important; padding:8px; margin-bottom:5px; border-radius:8px;">
-                <span onclick="prepareEdit(${i})" style="cursor:pointer; flex:1; font-weight:${ev.isWork ? '800' : '400'}; white-space: pre-wrap; word-break: break-all;">
-                    ${ev.isHoliday ? '🚩 ' : ''}${displayText}
-                </span>
-                <button onclick="deleteEvent(${i})" style="border:none; background:none; color:#999; cursor:pointer; font-size:18px;">&times;</button>
-            </div>`;
+            // padding을 4px로 줄이고, font-size를 12px로 낮춰 높이를 압축함
+            div.innerHTML += `
+                <div style="display:flex; justify-content:space-between; align-items:center; background-color:${bgColor} !important; padding:4px 8px; margin-bottom:3px; border-radius:6px; min-height:24px;">
+                    <span onclick="prepareEdit(${i})" style="cursor:pointer; flex:1; font-weight:${ev.isWork ? '800' : '400'}; font-size:12px; white-space: pre-wrap; word-break: break-all; line-height: 1.2;">
+                        ${ev.isHoliday ? '🚩 ' : ''}${displayText}
+                    </span>
+                    <button onclick="deleteEvent(${i})" style="border:none; background:none; color:#999; cursor:pointer; font-size:16px; padding:0 2px;">&times;</button>
+                </div>`;
         });
     };
 
