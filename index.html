@@ -147,10 +147,104 @@
     <div onclick="closeAll()" style="text-align:center; color:#aaa; cursor:pointer; font-size: 14px;">설정 취소</div>
 </div>
 
-<script type="module">
-    // ... 상단 Firebase 및 초기화 로직 동일 ...
+<!-- <script type="module"> -->
+    
 
-    // 패턴 일괄 적용 로직 (복구 및 강화)
+    <div id="yearly-modal" class="modal">
+        <h2 style="text-align: center; color: var(--blue); margin-top: 0;">📅 <span id="yearly-title"></span>년 전체 일정</h2>
+        <div id="yearly-list-container" style="flex: 1; overflow-y: auto; padding: 15px; background: #f9f9f9; border-radius: 12px;"></div>
+        <button onclick="closeAll()" style="width: 100%; padding: 15px; margin-top: 15px; border: none; background: var(--pink); color: white; border-radius: 12px; font-weight: bold; cursor: pointer;">닫기</button>
+    </div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const bdbConfig = { apiKey: "$BDB_API_KEY", authDomain: "$BDB_AUTH_DOMAIN", projectId: "$BDB_PROJECT_ID", storageBucket: "$BDB_STORAGE_BUCKET", messagingSenderId: "$BDB_SENDER_ID", appId: "$BDB_APP_ID" };
+    const app = initializeApp(bdbConfig);
+    const db = getFirestore(app);
+
+    let currentYear = new Date().getFullYear(), currentMonth = new Date().getMonth();
+    let data = {}, selectedDate = "", selectedColor = "#ffdce0", memoTimer, editIndex = null;
+    const cycle = ["주", "주", "야", "숙", "비", "비", "야", "숙"];
+    const cycleColors = { "주": "#e3f2fd", "야": "#ede7f6", "숙": "#fff9c4", "비": "#e8f5e9" };
+
+    // [홀브 이식] 음력/양력 공휴일 계산기 로직
+    let cachedHolidays = {};
+
+    async function fetchHolidays(year) {
+        if (cachedHolidays[year]) return cachedHolidays[year];
+        try {
+            const res = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/KR`);
+            const hData = await res.json();
+            const hMap = {};
+            hData.forEach(h => { 
+                const d = new Date(h.date); 
+                hMap[`${d.getMonth() + 1}-${d.getDate()}`] = h.localName; 
+            });
+            cachedHolidays[year] = hMap; 
+            return hMap;
+        } catch (e) { return {}; }
+    }
+    
+    // const getHolidays = (year) => {
+    //     // 양력 고정 공휴일 (승일 님 요청: '삼일절' 등 한글 명칭 정확히)
+    //     const solar = {
+    //         "1-1": "신정", "3-1": "삼일절", "5-5": "어린이날", "6-6": "현충일", 
+    //         "8-15": "광복절", "10-3": "개천절", "10-9": "한글날", "12-25": "성탄절"
+    //     };
+    //     // 음력 명절 (승일 님 요청: 설날, 추석 등 포함) - 2026년 기준 계산값
+    //     // 실제 운영시는 음력 변환 라이브러리나 API가 필요하지만, 우선 2026년 주요 명절 하드코딩
+    //     const lunar2026 = {
+    //         "2-16": "설날 연휴", "2-17": "설날", "2-18": "설날 연휴",
+    //         "5-24": "부처님오신날", 
+    //         "9-24": "추석 연휴", "9-25": "추석", "9-26": "추석 연휴"
+    //     };
+    //     return year === 2026 ? { ...solar, ...lunar2026 } : solar;
+    // };
+
+    onSnapshot(doc(db, "work_planner", "data"), (snap) => { if (snap.exists()) { data = snap.data(); renderCalendar(); } });
+    onSnapshot(doc(db, "work_planner", "memo"), (snap) => { if (snap.exists() && document.activeElement.id !== 'memo-area') document.getElementById('memo-area').value = snap.data().text || ""; });
+
+    async function renderCalendar() {
+        const grid = document.getElementById('calendar-grid'); grid.innerHTML = '';
+        document.getElementById('display-year').innerText = currentYear;
+        document.getElementById('month-display').innerText = `${currentMonth + 1}월`;
+
+        const firstDay = new Date(currentYear, currentMonth, 1).getDay(), lastDate = new Date(currentYear, currentMonth + 1, 0).getDate();
+        ['일','월','화','수','목','금','토'].forEach(d => grid.innerHTML += `<div class="day-header">${d}</div>`);
+        for(let i=0; i<firstDay; i++) grid.innerHTML += `<div class="day"></div>`;
+
+        const holidayList = await fetchHolidays(currentYear); // API 호출 추가
+
+        for(let d=1; d<=lastDate; d++) {
+            const dateStr = `${currentYear}-${currentMonth+1}-${d}`;
+            const dayOfWeek = new Date(currentYear, currentMonth, d).getDay();
+            const events = data[dateStr] || [];
+            
+            // 홀브 로직: API 데이터(fixH)와 사용자 지정 공휴일(userH) 결합
+            const fixH = holidayList[`${currentMonth+1}-${d}`];
+            const userH = events.find(ev => ev.isHoliday);
+            const hName = fixH || (userH ? userH.text : "");
+
+            let dayClass = (dayOfWeek === 0 || hName) ? "day sun" : (dayOfWeek === 6 ? "day sat" : "day");
+            const now = new Date();
+            if (currentYear === now.getFullYear() && currentMonth === now.getMonth() && d === now.getDate()) dayClass += " today";
+
+            const eventHtml = events.filter(ev => !ev.isHoliday).map(ev => {
+                const task = ev.text.trim();
+                const bgColor = ev.isWork ? (cycleColors[task] || ev.color || '#eee') : (ev.color || '#eee');
+                return `<span class="event-tag ${ev.isWork?'work-tag':''}" style="background-color:${bgColor} !important;">${ev.text}</span>`;
+            }).join('');
+
+            grid.innerHTML += `<div class="${dayClass}" ondblclick="openModal('${dateStr}')">
+                <span class="date-num">${d}</span>
+                ${hName ? `<span class="holiday-label">${hName}</span>` : ''}
+                <div class="event-container">${eventHtml}</div>
+            </div>`;
+        }
+    }
+
     window.applyPattern = async () => {
         const startDay = parseInt(document.getElementById('p-day').value);
         const startIdx = parseInt(document.getElementById('p-idx').value);
@@ -190,82 +284,6 @@
             }
         }
     };
-
-    <div id="yearly-modal" class="modal">
-        <h2 style="text-align: center; color: var(--blue); margin-top: 0;">📅 <span id="yearly-title"></span>년 전체 일정</h2>
-        <div id="yearly-list-container" style="flex: 1; overflow-y: auto; padding: 15px; background: #f9f9f9; border-radius: 12px;"></div>
-        <button onclick="closeAll()" style="width: 100%; padding: 15px; margin-top: 15px; border: none; background: var(--pink); color: white; border-radius: 12px; font-weight: bold; cursor: pointer;">닫기</button>
-    </div>
-
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-    const bdbConfig = { apiKey: "$BDB_API_KEY", authDomain: "$BDB_AUTH_DOMAIN", projectId: "$BDB_PROJECT_ID", storageBucket: "$BDB_STORAGE_BUCKET", messagingSenderId: "$BDB_SENDER_ID", appId: "$BDB_APP_ID" };
-    const app = initializeApp(bdbConfig);
-    const db = getFirestore(app);
-
-    let currentYear = new Date().getFullYear(), currentMonth = new Date().getMonth();
-    let data = {}, selectedDate = "", selectedColor = "#ffdce0", memoTimer, editIndex = null;
-    const cycle = ["주", "주", "야", "숙", "비", "비", "야", "숙"];
-    const cycleColors = { "주": "#e3f2fd", "야": "#ede7f6", "숙": "#fff9c4", "비": "#e8f5e9" };
-
-    // [홀브 이식] 음력/양력 공휴일 계산기 로직
-    const getHolidays = (year) => {
-        // 양력 고정 공휴일 (승일 님 요청: '삼일절' 등 한글 명칭 정확히)
-        const solar = {
-            "1-1": "신정", "3-1": "삼일절", "5-5": "어린이날", "6-6": "현충일", 
-            "8-15": "광복절", "10-3": "개천절", "10-9": "한글날", "12-25": "성탄절"
-        };
-        // 음력 명절 (승일 님 요청: 설날, 추석 등 포함) - 2026년 기준 계산값
-        // 실제 운영시는 음력 변환 라이브러리나 API가 필요하지만, 우선 2026년 주요 명절 하드코딩
-        const lunar2026 = {
-            "2-16": "설날 연휴", "2-17": "설날", "2-18": "설날 연휴",
-            "5-24": "부처님오신날", 
-            "9-24": "추석 연휴", "9-25": "추석", "9-26": "추석 연휴"
-        };
-        return year === 2026 ? { ...solar, ...lunar2026 } : solar;
-    };
-
-    onSnapshot(doc(db, "work_planner", "data"), (snap) => { if (snap.exists()) { data = snap.data(); renderCalendar(); } });
-    onSnapshot(doc(db, "work_planner", "memo"), (snap) => { if (snap.exists() && document.activeElement.id !== 'memo-area') document.getElementById('memo-area').value = snap.data().text || ""; });
-
-    async function renderCalendar() {
-        const grid = document.getElementById('calendar-grid'); grid.innerHTML = '';
-        document.getElementById('display-year').innerText = currentYear;
-        document.getElementById('month-display').innerText = `${currentMonth + 1}월`;
-
-        const firstDay = new Date(currentYear, currentMonth, 1).getDay(), lastDate = new Date(currentYear, currentMonth + 1, 0).getDate();
-        ['일','월','화','수','목','금','토'].forEach(d => grid.innerHTML += `<div class="day-header">${d}</div>`);
-        for(let i=0; i<firstDay; i++) grid.innerHTML += `<div class="day"></div>`;
-
-        const holidayList = getHolidays(currentYear);
-        for(let d=1; d<=lastDate; d++) {
-            const dateStr = `${currentYear}-${currentMonth+1}-${d}`, dayOfWeek = new Date(currentYear, currentMonth, d).getDay();
-            const events = data[dateStr] || [];
-            
-            const fixHoliday = holidayList[`${currentMonth+1}-${d}`];
-            const userHoliday = events.find(ev => ev.isHoliday);
-            const holidayName = fixHoliday || (userHoliday ? userHoliday.text : "");
-
-            let dayClass = (dayOfWeek === 0 || holidayName) ? "day sun" : (dayOfWeek === 6 ? "day sat" : "day");
-            const now = new Date();
-            if (currentYear === now.getFullYear() && currentMonth === now.getMonth() && d === now.getDate()) dayClass += " today";
-
-            const eventHtml = events.filter(ev => !ev.isHoliday).map(ev => {
-                const task = ev.text.trim();
-                const bgColor = ev.isWork ? (cycleColors[task] || ev.color || '#eee') : (ev.color || '#eee');
-                return `<span class="event-tag ${ev.isWork?'work-tag':''}" style="background-color:${bgColor} !important;">${ev.text}</span>`;
-            }).join('');
-
-            grid.innerHTML += `<div class="${dayClass}" ondblclick="openModal('${dateStr}')">
-                <span class="date-num">${d}</span>
-                ${holidayName ? `<span class="holiday-label">${holidayName}</span>` : ''}
-                <div class="event-container">${eventHtml}</div>
-            </div>`;
-        }
-    }
-
     window.openModal = (d) => {
         selectedDate = d; editIndex = null; document.getElementById('event-input').value = '';
         document.getElementById('is-holiday').checked = false;
