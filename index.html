@@ -79,29 +79,10 @@
     .day.sun .date-num, .day.sun .holiday-label { color: var(--sun) !important; }
     .day.sat .date-num { color: var(--sat); }
     .day .date-num { font-weight: bold; margin-bottom: 4px; }
-    .holiday-label {
-        color: #e53935;
-        /* 일정 태그보다 1px 크게 설정 */
-        font-size: 10.5px; 
-        font-weight: bold; /* 굵게 */
-        display: block;
-        margin-top: 2px;
-        line-height: 1.2;
-    }
     /* 일정 태그 */
-    .event-container { display: flex; flex-wrap: wrap; gap: 3px; width: 100%; justify-content: flex-start; }
-.event-tag {
-    display: block;
-    width: 100% !important;
-    max-width: 100%; /* 부모 칸을 넘지 못하게 */
-    box-sizing: border-box !important;
-    margin-bottom: 2px;
-    font-size: 9px;
-    padding: 2px 4px !important;
-    white-space: nowrap; /* 일단 한 줄로 */
-    text-overflow: clip; /* 옆 칸으로 삐져나가지 않게 자름 */
-    overflow: hidden;
-}
+    .event-container { display: flex; flex-wrap: wrap; gap: 3px; width: 100%; padding: 2px; justify-content: flex-start; }
+    .event-tag { display: inline-block; padding: 2px 4px; border-radius: 4px; font-size: 11px; color: #333; line-height: 1.4; max-width: 95%; word-break: break-all; white-space: normal; box-shadow: 0 1px 2px rgba(0,0,0,0.1); cursor: pointer; }
+
     .work-tag { border-left: 3px solid var(--blue); font-weight: 800; background: #f0f4f8 !important; }
 
     /* 모달 사이즈 복구 (홀브 영상 기준: 가로 확장) */
@@ -131,30 +112,14 @@
     #memo-area { width: 100%; height: 100%; background: transparent; border: none; font-family: 'Nanum Gothic', sans-serif; font-size: 16px; font-weight: 800; line-height: 1.8; resize: none; outline: none; padding: 10px; box-sizing: border-box; overflow-y: auto; }
     
     @media (max-width: 768px) {
-        body {
-        overflow-x: hidden; /* 가로 스크롤 방지 */
-    }
-        #calendar-container {
+        /* #calendar-container {
         width: 100% !important;
         margin: 0 !important;
         padding: 0 !important;
-    }
-.event-tag {
-        font-size: 9px;
-        /* 왼쪽 여백을 조금 더 주면 잘린 느낌이 사라집니다 */
-        padding-left: 4px !important;
-        padding-right: 2px !important;
-        letter-spacing: -0.8px;
-        white-space: normal;   /* 줄바꿈 허용 (잘림 방지) */
-        word-break: break-all; /* 4글자 넘으면 무조건 아래로 */
-        line-height: 1.1;
-        padding: 2px 3px;
-        width: 100%;           /* 칸에 꽉 차게 */
-        display: block;
-    }
-    .holiday-label {
-        font-size: 10px;
-    }
+    } */
+        .event-tag { font-size: 9px; letter-spacing: -1px; padding: 2px 1px; width: 100%; box-sizing: border-box; white-space: normal; word-break: break-all; line-height: 1.1; }
+        .holiday-label { font-size: 9px; letter-spacing: -0.5px; }
+    
         
         .year-area { 
             margin-left: -10px; /* 좌측으로 더 밀착 */
