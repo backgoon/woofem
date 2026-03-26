@@ -86,18 +86,25 @@
     .event-container { display: flex; flex-wrap: wrap; gap: 3px; width: 100%; justify-content: flex-start; }
     .event-tag {
         display: block;
-        padding: 2px 3px;
+        /* 상하 2px, 좌우 5px로 좌우 여백을 조금 더 확보 */
+        padding: 2px 5px !important; 
         border-radius: 4px;
-        /* 9px~10px 사이에서 4글자가 한 줄에 들어오는 최적의 크기 */
-        font-size: 9.5px; 
-        line-height: 1.1;
+        font-size: 9.5px;
+        line-height: 1.2;
         margin-bottom: 2px;
+        /* 중요: 너비를 꽉 채우되 박스 모델을 안쪽으로 고정 */
         width: 100%;
-        /* 단어 단위 줄바꿈 유지 (4글자까지는 최대한 붙여서) */
-        word-break: keep-all; 
-        white-space: normal;
         box-sizing: border-box;
-        letter-spacing: -0.5px; /* 자간을 살짝 좁혀 4글자 수용력 향상 */
+        
+        /* 글자 정렬 및 잘림 방지 */
+        text-align: left; 
+        white-space: nowrap;    /* 일단 한 줄 유지를 시도 */
+        overflow: hidden;       /* 넘치는 건 숨김 */
+        text-overflow: clip;    /* 말줄임표 없이 깔끔하게 */
+        
+        /* 자간을 아주 미세하게만 좁혀서 공간 확보 */
+        letter-spacing: -0.3px; 
+        word-break: break-all;
     }
     .work-tag { border-left: 3px solid var(--blue); font-weight: 800; background: #f0f4f8 !important; }
 
@@ -129,7 +136,11 @@
     
     @media (max-width: 768px) {
 .event-tag {
-        font-size: 9px;      /* 가독성을 위해 살짝 조절 */
+        font-size: 9px;
+        /* 왼쪽 여백을 조금 더 주면 잘린 느낌이 사라집니다 */
+        padding-left: 4px !important;
+        padding-right: 2px !important;
+        letter-spacing: -0.8px;
         white-space: normal;   /* 줄바꿈 허용 (잘림 방지) */
         word-break: break-all; /* 4글자 넘으면 무조건 아래로 */
         line-height: 1.1;
