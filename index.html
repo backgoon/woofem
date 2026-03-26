@@ -300,47 +300,37 @@
         window.updateModalList();
     };
 
-    window.updateModalList = () => {
-            const div = document.getElementById('modal-list'); div.innerHTML = '';
-            const events = data[selectedDate] || [];
-    
-            // [추가된 정렬 로직] 모달 안에서도 공휴일 -> 근무 -> 일반 일정 순으로 정렬
-            // const sorted = [...events].sort((a, b) => {
-            //     if (a.isHoliday !== b.isHoliday) return a.isHoliday ? -1 : 1;
-            //     if (a.isWork !== b.isWork) return a.isWork ? -1 : 1;
-            //     return 0;
-            // });
-    
-            // sorted.forEach((ev, i) => {
-            //     // 원본 인덱스를 찾아서 삭제할 때 문제가 없도록 처리
-            //     const originalIndex = events.indexOf(ev); 
-            //     const icon = ev.isHoliday ? `<span style="color:#e53935; margin-right:5px;">🚩</span>` : '';
-                
-            //     div.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; background:${ev.isHoliday ? '#fff5f5' : (ev.color || '#eee')}; padding:10px; margin-bottom:8px; border-radius:10px; border:1px solid #eee;">
-            //         <span onclick="prepareEdit(${originalIndex})" style="cursor:pointer; flex:1; font-size:15px;">
-            //             ${icon}${ev.isWork ? '[근무] ' : ''}${ev.text}
-            //         </span>
-            //         <button onclick="deleteEvent(${originalIndex})" style="border:none; background:none; color:#ff85a1; cursor:pointer; font-size:22px; font-weight:bold;">&times;</button>
-            //     </div>`;
-            // });
+window.updateModalList = () => {
+        const div = document.getElementById('modal-list'); 
+        div.innerHTML = '';
+        const events = data[selectedDate] || [];
 
-        // 연간 일정 리스트 생성 루프 내부
-            const sorted = [...dayEvents].sort((a, b) => (a.isHoliday === b.isHoliday ? 0 : a.isHoliday ? -1 : 1));
+        // 정렬: 공휴일 -> 근무 -> 일반 일정
+        const sorted = [...events].sort((a, b) => {
+            if (a.isHoliday !== b.isHoliday) return a.isHoliday ? -1 : 1;
+            if (a.isWork !== b.isWork) return a.isWork ? -1 : 1;
+            return 0;
+        });
+
+        if (events.length === 0) {
+            div.innerHTML = '<div style="text-align:center; color:#ccc; font-size:14px; padding:20px;">등록된 일정이 없습니다.</div>';
+            return;
+        }
+
+        sorted.forEach((ev) => {
+            // 삭제/수정을 위해 원본 배열에서의 실제 위치(index)를 정확히 찾음
+            const originalIndex = events.indexOf(ev); 
+            const icon = ev.isHoliday ? `<span style="color:#e53935; margin-right:5px;">🚩</span>` : '';
+            const workLabel = ev.isWork ? '[근무] ' : '';
             
-            if(fixH) combined.push(`<span style="color:red; font-weight:bold;">[${fixH}]</span>`);
-            
-            sorted.forEach(ev => {
-                // [수정 포인트] 근무(isWork)가 아닌 것들만 리스트에 추가
-                if (!ev.isWork) {
-                    const tag = ev.isHoliday ? 
-                        `<span style="color:red; font-weight:bold;">[${ev.text}]</span>` : 
-                        ev.text;
-                    combined.push(tag);
-                }
-            });
-        
-            if (events.length === 0) div.innerHTML = '<div style="text-align:center; color:#ccc; font-size:14px; padding:20px;">등록된 일정이 없습니다.</div>';
-        };
+            div.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; background:${ev.isHoliday ? '#fff5f5' : (ev.color || '#eee')}; padding:10px; margin-bottom:8px; border-radius:10px; border:1px solid #eee;">
+                <span onclick="prepareEdit(${originalIndex})" style="cursor:pointer; flex:1; font-size:15px;">
+                    ${icon}${workLabel}${ev.text}
+                </span>
+                <button onclick="deleteEvent(${originalIndex})" style="border:none; background:none; color:#ff85a1; cursor:pointer; font-size:22px; font-weight:bold;">&times;</button>
+            </div>`;
+        });
+    };
 
     window.addEvent = async () => {
         const val = document.getElementById('event-input').value; if (!val) return;
@@ -352,32 +342,42 @@
         window.updateModalList(); // 홀브 방식: 저장 후 바로 목록 갱신
     };
 
-    window.openYearlyView = async () => {
+window.openYearlyView = async () => {
         const container = document.getElementById('yearly-list-container'); 
-        container.innerHTML = '<div style="text-align:center; padding:20px;">로딩 중...</div>';
+        container.innerHTML = '<div style="text-align:center; padding:20px;">데이터 로딩 중...</div>';
         
-        const hList = await fetchHolidays(currentYear); // API 데이터 대기
+        document.getElementById('yearly-modal').style.display = 'flex';
+        document.getElementById('overlay').style.display = 'block';
+
+        const hList = await fetchHolidays(currentYear); 
         container.innerHTML = '';
         document.getElementById('yearly-title').innerText = currentYear;
-    
+
         for (let m = 1; m <= 12; m++) {
             let mHtml = '';
-            const daysInMonth = new Date(currentYear, m, 0).getDate();
-            for(let d=1; d<=daysInMonth; d++) {
+            const lastDay = new Date(currentYear, m, 0).getDate();
+            for(let d = 1; d <= lastDay; d++) {
                 const dateStr = `${currentYear}-${m}-${d}`;
                 const fixH = hList[`${m}-${d}`];
                 const dayEvents = data[dateStr] || [];
                 
                 let combined = [];
-                // 정렬: 공휴일 -> 근무 -> 일반 일정
-                const sorted = [...dayEvents].sort((a, b) => (a.isHoliday === b.isHoliday ? 0 : a.isHoliday ? -1 : 1));
-                
+                // 1. 법정 공휴일(API) 먼저 추가
                 if(fixH) combined.push(`<span style="color:red; font-weight:bold;">[${fixH}]</span>`);
-                sorted.forEach(ev => {
-                    const tag = ev.isHoliday ? `<span style="color:red; font-weight:bold;">[${ev.text}]</span>` : (ev.isWork ? `[${ev.text}]` : ev.text);
+
+                // 2. 사용자 입력 데이터 중 '근무(isWork)'가 아닌 것만 필터링 후 정렬
+                const personalEvents = dayEvents
+                    .filter(ev => ev.isWork !== true) // [핵심] 근무는 여기서 제외됩니다.
+                    .sort((a, b) => (a.isHoliday === b.isHoliday ? 0 : a.isHoliday ? -1 : 1));
+                
+                personalEvents.forEach(ev => {
+                    const tag = ev.isHoliday ? 
+                        `<span style="color:red; font-weight:bold;">[${ev.text}]</span>` : 
+                        ev.text;
                     combined.push(tag);
                 });
-    
+
+                // 3. 공휴일이나 개인 일정이 있을 때만 리스트에 표시
                 if (combined.length > 0) {
                     mHtml += `<div style="display:flex; padding:8px; border-bottom:1px solid #eee; font-size:15px;">
                         <span style="width:50px; font-weight:800;">${d}일</span>
@@ -387,8 +387,6 @@
             }
             if (mHtml) container.innerHTML += `<div style="margin-top:15px; border-bottom:3px solid var(--pink); padding-bottom:5px; font-weight:bold; color:var(--pink); font-size:18px;">${m}월</div>` + mHtml;
         }
-        document.getElementById('yearly-modal').style.display = 'flex';
-        document.getElementById('overlay').style.display = 'block';
     };
 
     window.closeAll = () => { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); document.getElementById('overlay').style.display = 'none'; document.querySelector('.memo-container').classList.remove('active'); };
