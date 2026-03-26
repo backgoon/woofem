@@ -66,10 +66,34 @@
     #memo-area { width: 100%; height: 100%; background: transparent; border: none; font-family: 'Nanum Gothic', sans-serif; font-size: 16px; font-weight: 800; line-height: 1.8; resize: none; outline: none; padding: 10px; box-sizing: border-box; overflow-y: auto; }
     
     @media (max-width: 768px) {
-        .memo-container { position: fixed !important; top: 20px !important; right: 10px !important; width: 50px !important; height: 50px !important; border-radius: 50% !important; z-index: 1001 !important; display: flex; justify-content: center; align-items: center; border: 3px solid #b2dfdb !important; }
+        .event-tag { 
+            font-size: 11px;       /* 모바일 가독성을 위해 살짝 조절 */
+            word-break: keep-all;  /* 단어 단위 줄바꿈 (4글자 유지 핵심) */
+            white-space: nowrap;   /* 줄바꿈 금지 */
+            overflow: hidden;      /* 넘치는 글자 숨김 */
+            text-overflow: clip;   /* 말줄임표 없이 깔끔하게 자르기 */
+            width: 100%;           /* 칸에 꽉 차게 */
+        }
+        .memo-container { 
+            position: fixed !important; 
+            top: 15px !important; /* 상단 여유 확보 */
+            right: 10px !important; 
+            width: 40px !important; /* 50px에서 40px로 축소 */
+            height: 40px !important; 
+            border-radius: 50% !important; 
+            z-index: 1001 !important; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            border: 2px solid #b2dfdb !important; 
+            background: #e0f2f1 !important;
+        }
         .memo-container.active { border-radius: 15px !important; top: 50% !important; left: 50% !important; transform: translate(-50%, -50%) !important; width: 90% !important; height: 350px !important; z-index: 1600 !important; padding: 15px !important; }
         .memo-container:not(.active) #memo-area { display: none; }
-        .memo-container:not(.active)::before { content: '📝'; font-size: 24px; }
+        .memo-container:not(.active)::before { 
+                content: '📝'; 
+                font-size: 18px; /* 아이콘 크기도 살짝 축소 */
+            }
         .grid { grid-template-columns: repeat(7, 1fr); gap: 1px; }
         .day { min-height: 90px; padding: 3px; }
         .modal { width: 90%; padding: 20px; }
@@ -82,12 +106,11 @@
 </head>
 <body>
     <div class="header">
-        <div class="year-area">
-            <span id="display-year"></span>년 
-            <button class="today-btn" onclick="goToday()">오늘</button>
-            <button class="pattern-btn" onclick="openPatternModal()">패턴</button>
-            <button class="today-btn" onclick="openYearlyView()" style="background:var(--blue); color:white; border-color:var(--blue); margin-left: 5px;">연간 일정</button>
-        </div>
+    <div class="year-area" style="gap: 4px;"> <span id="display-year" style="font-size: 22px;"></span>년 
+        <button class="today-btn" onclick="goToday()">오늘</button>
+        <button class="pattern-btn" onclick="openPatternModal()">패턴</button>
+        <button class="today-btn" onclick="openYearlyView()" style="background:var(--blue); color:white; border-color:var(--blue);">전체</button>
+    </div>
         <div class="memo-container" onclick="toggleMemo(event)"><textarea id="memo-area" placeholder="메모를 입력하세요..."></textarea></div>
     </div>
     
