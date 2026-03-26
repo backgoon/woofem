@@ -69,11 +69,28 @@
     .day.sun .date-num, .day.sun .holiday-label { color: var(--sun) !important; }
     .day.sat .date-num { color: var(--sat); }
     .day .date-num { font-weight: bold; margin-bottom: 4px; }
-    .holiday-label { font-size: 11px; font-weight: 800; display: block; margin-bottom: 3px; color: var(--sun); word-break: break-all; }
-
+    .holiday-label {
+        color: #e53935;
+        font-size: 9px; /* 기존보다 작게 조절 */
+        font-weight: bold;
+        display: block;
+        margin-bottom: 2px;
+    }
     /* 일정 태그 */
     .event-container { display: flex; flex-wrap: wrap; gap: 3px; width: 100%; justify-content: flex-start; }
-    .event-tag { display: block; padding: 3px 5px; border-radius: 4px; font-size: 11px; color: #333; line-height: 1.3; margin-bottom: 2px; width: 95%; word-break: break-all; white-space: pre-wrap; box-shadow: 0 1px 2px rgba(0,0,0,0.1); background-color: #eee; }
+    .event-tag {
+        display: block;
+        padding: 2px 4px;
+        border-radius: 4px;
+        font-size: 10px;
+        line-height: 1.1;
+        margin-bottom: 2px;
+        width: 100%;
+        /* 핵심: 칸을 벗어나지 않고 단어 단위로 줄바꿈 */
+        word-break: break-all; 
+        white-space: normal; 
+        box-sizing: border-box; /* 패딩이 너비에 포함되도록 */
+    }
     .work-tag { border-left: 3px solid var(--blue); font-weight: 800; background: #f0f4f8 !important; }
 
     /* 모달 사이즈 복구 (홀브 영상 기준: 가로 확장) */
@@ -104,7 +121,8 @@
     
     @media (max-width: 768px) {
         .event-tag {
-                font-size: 9px; /* 폰트를 더 줄여서 4글자 수용 */
+                font-size: 9px;
+                line-height: 1.0;
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: clip;
@@ -294,11 +312,11 @@
             if (currentYear === now.getFullYear() && currentMonth === now.getMonth() && d === now.getDate()) dayClass += " today";
 
             const sortedEvents = [...events].sort((a, b) => {
-                // 1순위: 근무(isWork)가 true인 것이 무조건 맨 위(-1)
+                // 1순위: 근무(isWork)가 true면 무조건 맨 위(-1)
                 if (a.isWork !== b.isWork) return a.isWork ? -1 : 1;
-                // 2순위: 공휴일(isHoliday)
+                // 2순위: 공휴일(isHoliday)이 그다음
                 if (a.isHoliday !== b.isHoliday) return a.isHoliday ? -1 : 1;
-                // 3순위: 일반 메모
+                // 3순위: 나머지 일반 일정
                 return 0;
             });
             
