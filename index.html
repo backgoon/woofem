@@ -305,24 +305,40 @@
             const events = data[selectedDate] || [];
     
             // [추가된 정렬 로직] 모달 안에서도 공휴일 -> 근무 -> 일반 일정 순으로 정렬
-            const sorted = [...events].sort((a, b) => {
-                if (a.isHoliday !== b.isHoliday) return a.isHoliday ? -1 : 1;
-                if (a.isWork !== b.isWork) return a.isWork ? -1 : 1;
-                return 0;
-            });
+            // const sorted = [...events].sort((a, b) => {
+            //     if (a.isHoliday !== b.isHoliday) return a.isHoliday ? -1 : 1;
+            //     if (a.isWork !== b.isWork) return a.isWork ? -1 : 1;
+            //     return 0;
+            // });
     
-            sorted.forEach((ev, i) => {
-                // 원본 인덱스를 찾아서 삭제할 때 문제가 없도록 처리
-                const originalIndex = events.indexOf(ev); 
-                const icon = ev.isHoliday ? `<span style="color:#e53935; margin-right:5px;">🚩</span>` : '';
+            // sorted.forEach((ev, i) => {
+            //     // 원본 인덱스를 찾아서 삭제할 때 문제가 없도록 처리
+            //     const originalIndex = events.indexOf(ev); 
+            //     const icon = ev.isHoliday ? `<span style="color:#e53935; margin-right:5px;">🚩</span>` : '';
                 
-                div.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; background:${ev.isHoliday ? '#fff5f5' : (ev.color || '#eee')}; padding:10px; margin-bottom:8px; border-radius:10px; border:1px solid #eee;">
-                    <span onclick="prepareEdit(${originalIndex})" style="cursor:pointer; flex:1; font-size:15px;">
-                        ${icon}${ev.isWork ? '[근무] ' : ''}${ev.text}
-                    </span>
-                    <button onclick="deleteEvent(${originalIndex})" style="border:none; background:none; color:#ff85a1; cursor:pointer; font-size:22px; font-weight:bold;">&times;</button>
-                </div>`;
+            //     div.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; background:${ev.isHoliday ? '#fff5f5' : (ev.color || '#eee')}; padding:10px; margin-bottom:8px; border-radius:10px; border:1px solid #eee;">
+            //         <span onclick="prepareEdit(${originalIndex})" style="cursor:pointer; flex:1; font-size:15px;">
+            //             ${icon}${ev.isWork ? '[근무] ' : ''}${ev.text}
+            //         </span>
+            //         <button onclick="deleteEvent(${originalIndex})" style="border:none; background:none; color:#ff85a1; cursor:pointer; font-size:22px; font-weight:bold;">&times;</button>
+            //     </div>`;
+            // });
+
+        // 연간 일정 리스트 생성 루프 내부
+            const sorted = [...dayEvents].sort((a, b) => (a.isHoliday === b.isHoliday ? 0 : a.isHoliday ? -1 : 1));
+            
+            if(fixH) combined.push(`<span style="color:red; font-weight:bold;">[${fixH}]</span>`);
+            
+            sorted.forEach(ev => {
+                // [수정 포인트] 근무(isWork)가 아닌 것들만 리스트에 추가
+                if (!ev.isWork) {
+                    const tag = ev.isHoliday ? 
+                        `<span style="color:red; font-weight:bold;">[${ev.text}]</span>` : 
+                        ev.text;
+                    combined.push(tag);
+                }
             });
+        
             if (events.length === 0) div.innerHTML = '<div style="text-align:center; color:#ccc; font-size:14px; padding:20px;">등록된 일정이 없습니다.</div>';
         };
 
