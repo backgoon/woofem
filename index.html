@@ -16,19 +16,25 @@
 
     /* 헤더 레이아웃 */
     .header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(255,133,161,0.1); margin-bottom: 15px; border: 1px solid var(--soft-pink); }
-    #calendar-grid {
-        display: grid;
-        grid-template-columns: repeat(7, 1fr) !important; /* 무조건 1/7씩 고정 */
-        width: 100%;
-        table-layout: fixed; /* 레이아웃 고정 보조 */
-    }
+.calendar-grid {
+    display: grid !important;
+    grid-template-columns: repeat(7, 12.5% [col-start]) !important; /* 비율을 명확히 고정 */
+    /* 혹은 아래 방식이 더 확실합니다 */
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr !important;
+    width: 100% !important;
+    table-layout: fixed !important;
+    border-collapse: collapse;
+}
     
     /* 칸 안의 내용이 넘쳐도 너비를 건드리지 못하게 설정 */
-    .day {
-        width: 100%;
-        min-width: 0; /* 중요: 내부 콘텐츠에 의해 너비가 늘어나는 것 방지 */
-        overflow: hidden;
-    }
+.day {
+    width: 100% !important;
+    min-width: 0 !important; /* 내부 글자 때문에 넓어지는 것 방지 */
+    overflow: hidden !important; /* 넘치는 글자는 숨기거나 줄바꿈 처리 */
+    box-sizing: border-box;
+    border: 0.5px solid #eee; /* 칸 구분을 명확히 */
+    position: relative;
+}
     
     /* 2. 연도와 '년' 글자 크기 맞춤 (CSS 내 .year-area 수정) */
 .year-area {
@@ -84,28 +90,18 @@
     }
     /* 일정 태그 */
     .event-container { display: flex; flex-wrap: wrap; gap: 3px; width: 100%; justify-content: flex-start; }
-    .event-tag {
-        display: block;
-        /* 상하 2px, 좌우 5px로 좌우 여백을 조금 더 확보 */
-        padding: 2px 5px !important; 
-        border-radius: 4px;
-        font-size: 9.5px;
-        line-height: 1.2;
-        margin-bottom: 2px;
-        /* 중요: 너비를 꽉 채우되 박스 모델을 안쪽으로 고정 */
-        width: 100%;
-        box-sizing: border-box;
-        
-        /* 글자 정렬 및 잘림 방지 */
-        text-align: left; 
-        white-space: nowrap;    /* 일단 한 줄 유지를 시도 */
-        overflow: hidden;       /* 넘치는 건 숨김 */
-        text-overflow: clip;    /* 말줄임표 없이 깔끔하게 */
-        
-        /* 자간을 아주 미세하게만 좁혀서 공간 확보 */
-        letter-spacing: -0.3px; 
-        word-break: break-all;
-    }
+.event-tag {
+    display: block;
+    width: 100% !important;
+    max-width: 100%; /* 부모 칸을 넘지 못하게 */
+    box-sizing: border-box !important;
+    margin-bottom: 2px;
+    font-size: 9px;
+    padding: 2px 4px !important;
+    white-space: nowrap; /* 일단 한 줄로 */
+    text-overflow: clip; /* 옆 칸으로 삐져나가지 않게 자름 */
+    overflow: hidden;
+}
     .work-tag { border-left: 3px solid var(--blue); font-weight: 800; background: #f0f4f8 !important; }
 
     /* 모달 사이즈 복구 (홀브 영상 기준: 가로 확장) */
@@ -135,6 +131,14 @@
     #memo-area { width: 100%; height: 100%; background: transparent; border: none; font-family: 'Nanum Gothic', sans-serif; font-size: 16px; font-weight: 800; line-height: 1.8; resize: none; outline: none; padding: 10px; box-sizing: border-box; overflow-y: auto; }
     
     @media (max-width: 768px) {
+        body {
+        overflow-x: hidden; /* 가로 스크롤 방지 */
+    }
+        #calendar-container {
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
 .event-tag {
         font-size: 9px;
         /* 왼쪽 여백을 조금 더 주면 잘린 느낌이 사라집니다 */
