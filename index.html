@@ -16,31 +16,45 @@
 
     /* 헤더 레이아웃 */
     .header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(255,133,161,0.1); margin-bottom: 15px; border: 1px solid var(--soft-pink); }
-    .calendar-grid {
-    display: grid;
-        grid-template-columns: repeat(7, 1fr); /* 7열 무조건 동일 비율 고정 */
+    #calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr) !important; /* 무조건 1/7씩 고정 */
         width: 100%;
-        border-top: 1px solid #eee;
-        background: #fff;
+        table-layout: fixed; /* 레이아웃 고정 보조 */
+    }
+    
+    /* 칸 안의 내용이 넘쳐도 너비를 건드리지 못하게 설정 */
+    .day {
+        width: 100%;
+        min-width: 0; /* 중요: 내부 콘텐츠에 의해 너비가 늘어나는 것 방지 */
+        overflow: hidden;
     }
     
     /* 2. 연도와 '년' 글자 크기 맞춤 (CSS 내 .year-area 수정) */
-    .year-area {
-        display: flex;
-        align-items: center;
-        gap: 4px; /* 버튼 간격 최소화 */
-        font-size: 18px; /* 연도와 '년' 모두 이 크기로 통일 */
-        font-weight: bold;
-    }
-    #display-year { font-size: 18px; } /* 연도 숫자 크기 동일하게 */
+.year-area {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 18px; /* 통일된 크기 */
+    font-weight: bold;
+}
+#display-year { font-size: 18px; } /* 숫자 크기도 18px로 고정 */
     /* .year-area { display: flex; align-items: center; white-space: nowrap; font-size: 28px; font-weight: 800; color: var(--blue); } */
     /* .today-btn { padding: 5px 12px; cursor: pointer; background: white; color: var(--pink); border: 2px solid var(--pink); border-radius: 20px; font-weight: bold; font-size: 14px; margin-left: 8px; }
     .pattern-btn { background: var(--blue); color: white; border: 2px solid var(--blue); border-radius: 20px; padding: 5px 12px; font-weight: bold; font-size: 14px; cursor: pointer; margin-left: 5px; } */
-    .today-btn, .pattern-btn {
-        padding: 4px 8px; /* 패딩 축소 */
-        font-size: 11px;  /* 폰트 축소 */
-        height: 26px;     /* 높이 축소 */
-        min-width: 35px;
+    .pattern-btn, .today-btn {
+        padding: 4px 10px;
+        font-size: 11px;
+        height: 28px;
+        border-radius: 15px; /* 각지지 않게 둥글게 수정 */
+        border: 1px solid var(--blue);
+        background: var(--blue); /* 전체 버튼과 같은 파란색 */
+        color: white;
+        cursor: pointer;
+    }
+    .today-btn:first-of-type {
+        background: white;
+        color: var(--blue);
     }
 
     /* 달력 그리드 */
@@ -101,10 +115,10 @@
         }
         .memo-container { 
             position: fixed !important; 
-            top: 15px !important; /* 상단 여유 확보 */
-            right: 10px !important; 
-            width: 40px !important; /* 50px에서 40px로 축소 */
-            height: 40px !important; 
+        width: 34px !important;  /* 더 축소 (40px -> 34px) */
+        height: 34px !important;
+        top: 12px !important;   /* 위치 살짝 상단으로 */
+        right: 8px !important;
             border-radius: 50% !important; 
             z-index: 1001 !important; 
             display: flex; 
@@ -280,9 +294,11 @@
             if (currentYear === now.getFullYear() && currentMonth === now.getMonth() && d === now.getDate()) dayClass += " today";
 
             const sortedEvents = [...events].sort((a, b) => {
-                // 1순위: 근무(isWork), 2순위: 공휴일(isHoliday), 3순위: 일반
+                // 1순위: 근무(isWork)가 true인 것이 무조건 맨 위(-1)
                 if (a.isWork !== b.isWork) return a.isWork ? -1 : 1;
+                // 2순위: 공휴일(isHoliday)
                 if (a.isHoliday !== b.isHoliday) return a.isHoliday ? -1 : 1;
+                // 3순위: 일반 메모
                 return 0;
             });
             
