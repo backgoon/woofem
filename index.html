@@ -436,55 +436,56 @@ window.updateModalList = () => {
         window.updateModalList(); // 홀브 방식: 저장 후 바로 목록 갱신
     };
 
-window.openYearlyView = async () => {
-        const container = document.getElementById('yearly-list-container'); 
-        container.innerHTML = '<div style="text-align:center; padding:20px;">데이터 로딩 중...</div>';
-        
-        document.getElementById('').style.display = 'flex';
-        document.getElementById('overlay').style.display = 'block';
+window.openYearlyView = async function() {
+    const modal = document.getElementById('yearly-modal');
+    if (!modal) return; // [안전장치] 모달이 없으면 실행 안 함
 
-        const hList = await fetchHolidays(currentYear); 
+    // 1. 모달 띄우기 (style 에러 방지)
+    modal.style.display = 'flex'; 
 
-        console.log("API에서 받은 공휴일 전체 데이터:", hList); // <-- 여기서 데이터 형식을 꼭 확인하세요!
-    
-        container.innerHTML = '';
-        document.getElementById('yearly-title').innerText = currentYear;
+    const container = document.getElementById('yearly-calendar-container');
+    if (!container) return; // [안전장치] 컨테이너가 없으면 실행 안 함
+    container.innerHTML = '';
 
-        for (let m = 1; m <= 12; m++) {
-            let mHtml = '';
-            const lastDay = new Date(currentYear, m, 0).getDate();
-            for(let d = 1; d <= lastDay; d++) {
-                const dateStr = `${m}-${d}`;
-                const fixH = hList[`${m}-${d}`];
-                const dayEvents = data[dateStr] || [];
-                
-                let combined = [];
-                // 1. 법정 공휴일(API) 먼저 추가
-                if(fixH) combined.push(`<span style="color:red; font-weight:bold;">[${fixH}]</span>`);
+    // 2. 1월부터 12월까지 루프
+    for (let m = 0; m < 12; m++) {
+        let html = `<div class="y-month"><h4>${m + 1}월</h4><div class="y-grid">`;
+        const lastDate = new Date(currentYear, m + 1, 0).getDate();
 
-                // 2. 사용자 입력 데이터 중 '근무(isWork)'가 아닌 것만 필터링 후 정렬
-                const personalEvents = dayEvents
-                    .filter(ev => ev.isWork !== true) // [핵심] 근무는 여기서 제외됩니다.
-                    .sort((a, b) => (a.isHoliday === b.isHoliday ? 0 : a.isHoliday ? -1 : 1));
-                
-                personalEvents.forEach(ev => {
-                    const tag = ev.isHoliday ? 
-                        `<span style="color:red; font-weight:bold;">[${ev.text}]</span>` : 
-                        ev.text;
-                    combined.push(tag);
-                });
+        for (let d = 1; d <= lastDate; d++) {
+            // [약속] 승일 님 형식: '1-1'
+            const dateStr = `${m + 1}-${d}`; 
+            const dayOfWeek = new Date(currentYear, m, d).getDay();
+            
+            // 데이터 매칭 (data와 cachedHolidays 사용)
+            const hList = cachedHolidays[currentYear] || {};
+            const fixH = hList[dateStr]; // API 공휴일
+            const dayEvents = data[dateStr] || []; // 내 일정
+            const userH = dayEvents.find(ev => ev.isHoliday);
+            const hName = fixH || (userH ? userH.text : "");
 
-                // 3. 공휴일이나 개인 일정이 있을 때만 리스트에 표시
-                if (combined.length > 0) {
-                    mHtml += `<div style="display:flex; padding:8px; border-bottom:1px solid #eee; font-size:15px;">
-                        <span style="width:50px; font-weight:800;">${d}일</span>
-                        <span style="flex:1;">${combined.join(', ')}</span>
-                    </div>`;
-                }
-            }
-            if (mHtml) container.innerHTML += `<div style="margin-top:15px; border-bottom:3px solid var(--pink); padding-bottom:5px; font-weight:bold; color:var(--pink); font-size:18px;">${m}월</div>` + mHtml;
+            // 스타일 (일요일/공휴일 빨간색)
+            let dClass = "y-date";
+            if (dayOfWeek === 0 || hName) dClass += " sun";
+            if (dayOfWeek === 6) dClass += " sat";
+
+            // 정렬: 근무 -> 공휴일 이름 -> 일반 일정
+            const sortedTags = dayEvents.filter(ev => !ev.isHoliday).sort((a, b) => (b.isWork || 0) - (a.isWork || 0));
+
+            html += `
+                <div class="${dClass}">
+                    <span class="y-num">${d}</span>
+                    <div class="y-event-container">
+                        ${sortedTags.filter(ev => ev.isWork).map(ev => `<small style="background:${ev.color}; color:white; display:block;">${ev.text}</small>`).join('')}
+                        ${hName ? `<span style="color:red; font-size:0.65em; display:block;">${hName}</span>` : ''}
+                        ${sortedTags.filter(ev => !ev.isWork).map(ev => `<small style="background:${ev.color || '#eee'}; display:block;">${ev.text}</small>`).join('')}
+                    </div>
+                </div>`;
         }
-    };
+        html += `</div></div>`;
+        container.innerHTML += html;
+    }
+};
 
     window.closeAll = () => { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); document.getElementById('overlay').style.display = 'none'; document.querySelector('.memo-container').classList.remove('active'); };
     window.openPatternModal = () => { document.getElementById('pattern-modal').style.display = 'block'; document.getElementById('overlay').style.display = 'block'; };
