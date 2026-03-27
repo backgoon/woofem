@@ -258,6 +258,7 @@
 let cachedHolidays = {};
     
 async function prepareData() {
+    renderCalendar();
     // 1. 올해 공휴일을 미리 가져와서 변수에 저장 (딱 한 번만 통신)
     await fetchHolidays(currentYear);
     
@@ -325,8 +326,7 @@ async function fetchHolidays(year) {
     }
 
     // 미리 받아둔 공휴일 데이터 가져오기 (await 없이 즉시!)
-    const holidayList = cachedHolidays[currentYear] || {};
-
+    const holidayList = (cachedHolidays && cachedHolidays[currentYear]) ? cachedHolidays[currentYear] : {};
     for (let d = 1; d <= lastDate; d++) {
         const dayOfWeek = new Date(currentYear, currentMonth, d).getDay();
         const dateStr = `${currentYear}-${currentMonth + 1}-${d}`;
