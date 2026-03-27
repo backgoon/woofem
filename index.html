@@ -76,7 +76,12 @@
 
     .day { min-height: 100px; background: white; border: 1px solid #ffeef1; border-radius: 6px; padding: 6px; cursor: pointer; position: relative; font-size: 13px; display: flex; flex-direction: column; }
     .day.today { border: 2px solid var(--pink) !important; background: var(--today) !important; }
-    .day.sun .date-num, .day.sun .holiday-label { display: block !important; color: var(--sun) !important; }
+    .day.sun .date-num, .day.sun .holiday-label { 
+        color: red !important;
+        font-weight: bold;
+        display: block;
+        margin-top: 2px;
+        }
     .day.sat .date-num { color: var(--sat); }
     .day .date-num { font-weight: bold; margin-bottom: 4px; }
     /* 일정 태그 */
@@ -301,73 +306,71 @@ async function fetchHolidays(year) {
 }
     
     async function renderCalendar() {
-        const grid = document.getElementById('calendar-grid'); grid.innerHTML = '';
-        document.getElementById('display-year').innerText = currentYear;
-        document.getElementById('month-display').innerText = `${currentMonth + 1}월`;
+    const grid = document.getElementById('calendar-grid');
+    grid.innerHTML = '';
+    document.getElementById('display-year').innerText = currentYear;
+    document.getElementById('month-display').innerText = `${currentMonth + 1}월`;
 
-        const firstDay = new Date(currentYear, currentMonth, 1).getDay(), lastDate = new Date(currentYear, currentMonth + 1, 0).getDate();
-        ['일','월','화','수','목','금','토'].forEach(d => grid.innerHTML += `<div class="day-header">${d}</div>`);
-        for(let i=0; i<firstDay; i++) grid.innerHTML += `<div class="day"></div>`;
-        
-        
-        // const holidayList = cachedHolidays[currentYear] || {};
-        // const holidayList = await fetchHolidays(currentYear); // API 호출 추가
+    const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+    const lastDate = new Date(currentYear, currentMonth + 1, 0).getDate();
 
-        for(let d=1; d<=lastDate; d++) {
-            const dayOfWeek = new Date(currentYear, currentMonth, d).getDay();
-            const dateStr = `${currentYear}-${currentMonth+1}-${d}`;
-            const events = data[dateStr] || [];
-            
-            const holidayList = cachedHolidays[currentYear] || {};
-            const fixH = holidayList[dateStr];
-            
-            // [수정 포인트] 아래처럼 '하나의' dayClass 변수에 모든 조건을 다 넣어야 합니다.
-            
-            // const dayOfWeek = new Date(currentYear, currentMonth, d).getDay();
-            // // const dateStr = `${currentYear}-${currentMonth+1}-${d}`;
-            // // const dateStr = `${currentYear}-${currentMonth+1}-${d}`, dayOfWeek = new Date(currentYear, currentMonth, d).getDay();
-            // const dateStr = `${currentYear}-${currentMonth+1}-${d}`;
-            // const events = data[dateStr] || [];
-            
-            // 1. 공휴일 정보 먼저 파악 (변수명 통일)
-            
-            // const fixH = holidayList[dateStr];
-            // const fixH = holidayList[`${currentMonth+1}-${d}`];
-            const userH = events.find(ev => ev.isHoliday);
-            const hName = fixH || (userH ? userH.text : ""); // 여기서 hName으로 정의
+    // 요일 헤더 생성
+    ['일','월','화','수','목','금','토'].forEach(d => {
+        grid.innerHTML += `<div class="day-header">${d}</div>`;
+    });
 
-            // 2. 정렬 로직: 근무(isWork)가 무조건 맨 위
-            const sortedEvents = [...events].sort((a, b) => {
-                if (a.isWork !== b.isWork) return a.isWork ? -1 : 1;
-                if (a.isHoliday !== b.isHoliday) return a.isHoliday ? -1 : 1;
-                return 0;
-            });
-
-            // 3. 오늘 날짜 및 스타일 결정
-            let dayClass = (dayOfWeek === 0 || fixH) ? "day sun" : (dayOfWeek === 6 ? "day sat" : "day");
-            // 만약 "오늘" 표시 로직이 따로 있다면 아래처럼 한 줄 추가 (새로 선언하지 말고 값만 추가)
-            const today = new Date();
-            if (currentYear === today.getFullYear() && currentMonth === today.getMonth() && d === today.getDate()) {
-                dayClass += " today"; 
-            }
-            // 4. 태그 생성 (공휴일 제외한 근무/일정만)
-            const eventHtml = sortedEvents.filter(ev => !ev.isHoliday).map(ev => {
-                const task = ev.text.trim();
-                const bgColor = ev.isWork ? (cycleColors[task] || ev.color) : ev.color;
-                return `<span class="event-tag ${ev.isWork?'work-tag':''}" style="background-color:${bgColor} !important;">${ev.text}</span>`;
-            }).join('');
-
-            // 5. 최종 출력 (태그가 먼저 나오고, hName(공휴일)이 그 밑에 나오도록)
-            grid.innerHTML += `
-                <div class="${dayClass}" ondblclick="openModal('${dateStr}')">
-                    <span class="date-num">${d}</span>
-                    <div class="event-container">
-                        ${eventHtml}
-                        ${hName ? `<span class="holiday-label" style="display:block; margin-top:2px;">${hName}</span>` : ''}
-                    </div>
-                </div>`;
-        }
+    // 시작일 앞 빈칸 생성
+    for(let i=0; i<firstDay; i++) {
+        grid.innerHTML += `<div class="day"></div>`;
     }
+
+    // 미리 받아둔 공휴일 데이터 가져오기 (await 없이 즉시!)
+    const holidayList = cachedHolidays[currentYear] || {};
+
+    for (let d = 1; d <= lastDate; d++) {
+        const dayOfWeek = new Date(currentYear, currentMonth, d).getDay();
+        const dateStr = `${currentYear}-${currentMonth + 1}-${d}`;
+        
+        // 1. 데이터 매칭 (공휴일 & 일정)
+        const fixH = holidayList[dateStr]; // API 공휴일
+        const events = data[dateStr] || []; // 사용자가 저장한 일정/근무
+        const userH = events.find(ev => ev.isHoliday); // 직접 등록한 공휴일 체크
+        const hName = fixH || (userH ? userH.text : ""); // 둘 중 하나라도 있으면 이름 확정
+
+        // 2. 클래스 결정 (일요일 또는 공휴일이면 "sun" 추가해서 빨갛게!)
+        let dayClass = (dayOfWeek === 0 || fixH || userH) ? "day sun" : (dayOfWeek === 6 ? "day sat" : "day");
+
+        // 오늘 날짜 체크
+        const today = new Date();
+        if (currentYear === today.getFullYear() && currentMonth === today.getMonth() && d === today.getDate()) {
+            dayClass += " today";
+        }
+
+        // 3. 일정 정렬 (근무 -> 공휴일 -> 일반순)
+        const sortedEvents = [...events].sort((a, b) => {
+            if (a.isWork !== b.isWork) return a.isWork ? -1 : 1;
+            if (a.isHoliday !== b.isHoliday) return a.isHoliday ? -1 : 1;
+            return 0;
+        });
+
+        // 4. 이벤트 태그 HTML 생성 (공휴일은 별도 라벨로 뺄 것이므로 제외)
+        const eventHtml = sortedEvents.filter(ev => !ev.isHoliday).map(ev => {
+            const task = ev.text.trim();
+            const bgColor = ev.isWork ? (cycleColors[task] || ev.color) : ev.color;
+            return `<span class="event-tag ${ev.isWork ? 'work-tag' : ''}" style="background-color:${bgColor} !important;">${ev.text}</span>`;
+        }).join('');
+
+        // 5. 최종 출력
+        grid.innerHTML += `
+            <div class="${dayClass}" ondblclick="openModal('${dateStr}')">
+                <span class="date-num">${d}</span>
+                <div class="event-container">
+                    ${eventHtml}
+                    ${hName ? `<span class="holiday-label">${hName}</span>` : ''}
+                </div>
+            </div>`;
+    }
+}
 
     window.applyPattern = async () => {
         const startDay = parseInt(document.getElementById('p-day').value);
