@@ -313,13 +313,25 @@ async function fetchHolidays(year) {
         // const holidayList = await fetchHolidays(currentYear); // API 호출 추가
 
         for(let d=1; d<=lastDate; d++) {
+            const dayOfWeek = new Date(currentYear, currentMonth, d).getDay();
             const dateStr = `${currentYear}-${currentMonth+1}-${d}`;
-            // const dateStr = `${currentYear}-${currentMonth+1}-${d}`, dayOfWeek = new Date(currentYear, currentMonth, d).getDay();
-            const events = data[dateStr] || [];
+            
+            // 2. 공휴일 데이터 가져오기 (await 없이 미리 받아둔 캐시 사용)
+            const holidayList = cachedHolidays[currentYear] || {};
+            const fixH = holidayList[dateStr]; 
+            
+            // 3. 스타일 결정 (여기서 dayOfWeek를 사용함)
+            let dayClass = (dayOfWeek === 0 || fixH) ? "day sun" : (dayOfWeek === 6 ? "day sat" : "day");
+            
+            // const dayOfWeek = new Date(currentYear, currentMonth, d).getDay();
+            // // const dateStr = `${currentYear}-${currentMonth+1}-${d}`;
+            // // const dateStr = `${currentYear}-${currentMonth+1}-${d}`, dayOfWeek = new Date(currentYear, currentMonth, d).getDay();
+            // const dateStr = `${currentYear}-${currentMonth+1}-${d}`;
+            // const events = data[dateStr] || [];
             
             // 1. 공휴일 정보 먼저 파악 (변수명 통일)
             
-            const fixH = holidayList[dateStr];
+            // const fixH = holidayList[dateStr];
             // const fixH = holidayList[`${currentMonth+1}-${d}`];
             const userH = events.find(ev => ev.isHoliday);
             const hName = fixH || (userH ? userH.text : ""); // 여기서 hName으로 정의
