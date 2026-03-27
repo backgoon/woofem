@@ -282,16 +282,23 @@ window.onload = prepareData;
     onSnapshot(doc(db, "work_planner", "data"), (snap) => { if (snap.exists()) { data = snap.data(); renderCalendar(); } });
     onSnapshot(doc(db, "work_planner", "memo"), (snap) => { if (snap.exists() && document.activeElement.id !== 'memo-area') document.getElementById('memo-area').value = snap.data().text || ""; });
 
-        async function fetchHolidays(year) {
-        if (cachedHolidays[year]) return cachedHolidays[year];
-        try {
-            const res = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/KR`);
-            const hData = await res.json();
-            const hMap = {};
-            hData.forEach(h => { const d = new Date(h.date); hMap[`${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`] = h.localName; });
-            cachedHolidays[year] = hMap; return hMap;
-        } catch (e) { return {}; }
-    }
+async function fetchHolidays(year) {
+    // 이미 데이터가 있다면 서버에 가지 않고 바로 반환 (이게 속도의 핵심)
+    if (cachedHolidays[year]) return cachedHolidays[year];
+    
+    try {
+        const res = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/KR`);
+        const hData = await res.json();
+        const hMap = {};
+        hData.forEach(h => { 
+            const d = new Date(h.date); 
+            // 키 형식을 '2026-3-1'로 통일
+            hMap[`${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`] = h.localName; 
+        });
+        cachedHolidays[year] = hMap; 
+        return hMap;
+    } catch (e) { return {}; }
+}
     
     async function renderCalendar() {
         const grid = document.getElementById('calendar-grid'); grid.innerHTML = '';
@@ -306,11 +313,14 @@ window.onload = prepareData;
         // const holidayList = await fetchHolidays(currentYear); // API 호출 추가
 
         for(let d=1; d<=lastDate; d++) {
-            const dateStr = `${currentYear}-${currentMonth+1}-${d}`, dayOfWeek = new Date(currentYear, currentMonth, d).getDay();
+            const dateStr = `${currentYear}-${currentMonth+1}-${d}`;
+            // const dateStr = `${currentYear}-${currentMonth+1}-${d}`, dayOfWeek = new Date(currentYear, currentMonth, d).getDay();
             const events = data[dateStr] || [];
             
             // 1. 공휴일 정보 먼저 파악 (변수명 통일)
-            const fixH = holidayList[`${currentMonth+1}-${d}`];
+            
+            const fixH = holidayList[dateStr];
+            // const fixH = holidayList[`${currentMonth+1}-${d}`];
             const userH = events.find(ev => ev.isHoliday);
             const hName = fixH || (userH ? userH.text : ""); // 여기서 hName으로 정의
 
