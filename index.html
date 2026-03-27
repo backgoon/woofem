@@ -264,7 +264,7 @@ async function fetchHolidays(year) {
     }
 
     try {
-        const url = `여기에_공휴일_API_주소...`; // 주소가 정확한지 다시 확인!
+        const url = `https://apis.data.go.kr/B190017/service/Key...&solYear=${year}...`;
         const response = await fetch(url);
 
         // [중요] 응답이 정상이 아닐 때 (404, 500 등) HTML을 JSON으로 읽지 않게 차단
