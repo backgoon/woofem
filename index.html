@@ -113,8 +113,8 @@
     
     @media (max-width: 768px) {
 
-        .event-tag { font-size: 9px; letter-spacing: -1px; padding: 2px 1px; width: 100%; box-sizing: border-box; white-space: normal; word-break: break-all; line-height: 1.1; }
-        .holiday-label { font-size: 9px; letter-spacing: -0.5px; }
+        .event-tag { display: block !important; font-size: 9px; letter-spacing: -1px; padding: 2px 1px; width: 100%; box-sizing: border-box; white-space: normal; word-break: break-all; line-height: 1.1; }
+        .holiday-label { display: block !important; font-size: 9px; letter-spacing: -0.5px; }
     
         
         .year-area { 
@@ -239,7 +239,25 @@
     const cycleColors = { "주": "#e3f2fd", "야": "#ede7f6", "숙": "#fff9c4", "비": "#e8f5e9" };
 
     // [홀브 이식] 음력/양력 공휴일 계산기 로직
-    let cachedHolidays = {};
+    let cachedHolidays = null; // 공휴일 데이터를 담아둘 전역 변수
+    let currentYear = new Date().getFullYear();
+    let currentMonth = new Date().getMonth();
+    
+    // [추가] 페이지 로드 시 딱 한 번만 실행되는 함수
+    async function getInitialData() {
+        console.time("로딩 속도"); 
+        
+        // API 데이터를 미리 가져와서 전역 변수에 저장
+        cachedHolidays = await fetchHolidays(currentYear);
+        
+        console.timeEnd("로딩 속도");
+        
+        // 데이터 로딩이 끝난 후 달력을 그립니다.
+        renderCalendar();
+    }
+    
+    // 3. 페이지가 뜨자마자 실행 (기본 renderCalendar() 호출 대신 이걸 사용)
+    window.onload = getInitialData;
 
     async function fetchHolidays(year) {
         if (cachedHolidays[year]) return cachedHolidays[year];
@@ -284,7 +302,8 @@
         ['일','월','화','수','목','금','토'].forEach(d => grid.innerHTML += `<div class="day-header">${d}</div>`);
         for(let i=0; i<firstDay; i++) grid.innerHTML += `<div class="day"></div>`;
 
-        const holidayList = await fetchHolidays(currentYear); // API 호출 추가
+        const holidayList = cachedHolidays || {};
+        // const holidayList = await fetchHolidays(currentYear); // API 호출 추가
 
         for(let d=1; d<=lastDate; d++) {
             const dateStr = `${currentYear}-${currentMonth+1}-${d}`, dayOfWeek = new Date(currentYear, currentMonth, d).getDay();
