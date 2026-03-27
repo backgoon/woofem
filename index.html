@@ -318,77 +318,68 @@ window.onload = initApp;
 
 async function fetchHolidays(year) {
     if (cachedHolidays[year]) return cachedHolidays[year];
-    
     try {
         const res = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/KR`);
         const hData = await res.json();
         const hMap = {};
-        hData.forEach(h => { 
-            const d = new Date(h.date); 
-            // 승일 님 데이터 형식에 맞게 '월-일'로 저장
-            hMap[`${d.getMonth() + 1}-${d.getDate()}`] = h.localName; 
+        hData.forEach(h => {
+            const d = new Date(h.date);
+            // '1-1' 형식으로 저장해서 data와 매칭되게 함
+            hMap[`${d.getMonth() + 1}-${d.getDate()}`] = h.localName;
         });
         cachedHolidays[year] = hMap;
-        
-        // 데이터 도착했으니 화면 갱신 (지각 방지)
-        renderCalendar(); 
-    } catch (e) { return {}; }
+        return hMap;
+    } catch (e) {
+        return {};
+    }
 }
     
-    async function renderCalendar() {
+   async function renderCalendar() {
     const grid = document.getElementById('calendar-grid');
+    if (!grid) return;
     grid.innerHTML = '';
+
+    // 1. 연도와 월 표시
     document.getElementById('display-year').innerText = currentYear;
     document.getElementById('month-display').innerText = `${currentMonth + 1}월`;
 
+    // 2. 요일 헤더 및 시작일 빈칸 (기존과 동일)
     const firstDay = new Date(currentYear, currentMonth, 1).getDay();
     const lastDate = new Date(currentYear, currentMonth + 1, 0).getDate();
+    ['일','월','화','수','목','금','토'].forEach(d => grid.innerHTML += `<div class="day-header">${d}</div>`);
+    for(let i=0; i<firstDay; i++) grid.innerHTML += `<div class="day"></div>`;
 
-    // 요일 헤더 생성
-    ['일','월','화','수','목','금','토'].forEach(d => {
-        grid.innerHTML += `<div class="day-header">${d}</div>`;
-    });
+    // 3. [복구 핵심] 공휴일 데이터를 확실히 가져올 때까지 기다립니다.
+    const holidayList = await fetchHolidays(currentYear) || {};
 
-    // 시작일 앞 빈칸 생성
-    for(let i=0; i<firstDay; i++) {
-        grid.innerHTML += `<div class="day"></div>`;
-    }
-
-    // 미리 받아둔 공휴일 데이터 가져오기 (await 없이 즉시!)
-    const holidayList = (window.cachedHolidays && cachedHolidays[currentYear]) ? cachedHolidays[currentYear] : {};
-    const currentData = window.data || {};
     for (let d = 1; d <= lastDate; d++) {
         const dayOfWeek = new Date(currentYear, currentMonth, d).getDay();
-        const dateStr = `${currentMonth + 1}-${d}`; // '1-1' 형식
-        const fixH = holidayList[dateStr];
-        const events = currentData[dateStr] || [];
-        const userH = events.find(ev => ev.isHoliday); // 직접 등록한 공휴일 체크
-        const hName = fixH || (userH ? userH.text : ""); // 둘 중 하나라도 있으면 이름 확정
+        // 승일 님의 데이터 형식인 '월-일'로 통일
+        const dateStr = `${currentMonth + 1}-${d}`; 
+        
+        // 4. 데이터 매칭
+        const fixH = holidayList[dateStr]; // API 공휴일 (1-1 형식)
+        const events = data[dateStr] || []; // 파이어베이스 내 일정
+        const userH = events.find(ev => ev.isHoliday); 
+        const hName = fixH || (userH ? userH.text : ""); 
 
-        // 2. 클래스 결정 (일요일 또는 공휴일이면 "sun" 추가해서 빨갛게!)
+        // 5. 스타일 결정 (삭제했던 부분 복구)
         let dayClass = (dayOfWeek === 0 || fixH || userH) ? "day sun" : (dayOfWeek === 6 ? "day sat" : "day");
 
-        // 오늘 날짜 체크
+        // 오늘 날짜 표시
         const today = new Date();
         if (currentYear === today.getFullYear() && currentMonth === today.getMonth() && d === today.getDate()) {
             dayClass += " today";
         }
 
-        // 3. 일정 정렬 (근무 -> 공휴일 -> 일반순)
-        const sortedEvents = [...events].sort((a, b) => {
-            if (a.isWork !== b.isWork) return a.isWork ? -1 : 1;
-            if (a.isHoliday !== b.isHoliday) return a.isHoliday ? -1 : 1;
-            return 0;
-        });
-
-        // 4. 이벤트 태그 HTML 생성 (공휴일은 별도 라벨로 뺄 것이므로 제외)
-        const eventHtml = sortedEvents.filter(ev => !ev.isHoliday).map(ev => {
+        // 6. 일정 태그 생성 (공휴일 제외한 근무/일정만)
+        const eventHtml = events.filter(ev => !ev.isHoliday).map(ev => {
             const task = ev.text.trim();
             const bgColor = ev.isWork ? (cycleColors[task] || ev.color) : ev.color;
-            return `<span class="event-tag ${ev.isWork ? 'work-tag' : ''}" style="background-color:${bgColor} !important;">${ev.text}</span>`;
+            return `<span class="event-tag" style="background-color:${bgColor} !important;">${ev.text}</span>`;
         }).join('');
 
-        // 5. 최종 출력
+        // 7. 최종 출력
         grid.innerHTML += `
             <div class="${dayClass}" ondblclick="openModal('${dateStr}')">
                 <span class="date-num">${d}</span>
