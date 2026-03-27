@@ -239,22 +239,19 @@
     const cycleColors = { "주": "#e3f2fd", "야": "#ede7f6", "숙": "#fff9c4", "비": "#e8f5e9" };
 
     // [홀브 이식] 음력/양력 공휴일 계산기 로직
-    let cachedHolidays = null; // 공휴일 데이터를 담아둘 전역 변수
-    let currentYear = new Date().getFullYear();
-    let currentMonth = new Date().getMonth();
+    let cachedHolidays = null; 
+
+async function getInitialData() {
+    console.time("로딩 속도");
     
-    // [추가] 페이지 로드 시 딱 한 번만 실행되는 함수
-    async function getInitialData() {
-        console.time("로딩 속도"); 
-        
-        // API 데이터를 미리 가져와서 전역 변수에 저장
-        cachedHolidays = await fetchHolidays(currentYear);
-        
-        console.timeEnd("로딩 속도");
-        
-        // 데이터 로딩이 끝난 후 달력을 그립니다.
-        renderCalendar();
-    }
+    // 이미 선언된 currentYear를 그대로 사용합니다.
+    cachedHolidays = await fetchHolidays(currentYear); 
+    
+    console.timeEnd("로딩 속도");
+    
+    // 달력을 그립니다.
+    renderCalendar();
+}
     
     // 3. 페이지가 뜨자마자 실행 (기본 renderCalendar() 호출 대신 이걸 사용)
     window.onload = getInitialData;
