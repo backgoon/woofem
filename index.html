@@ -268,10 +268,10 @@ let cachedHolidays = {};
 // // [수정] 페이지 로드 시 renderCalendar 대신 prepareData를 실행
 // window.onload = prepareData;
 function initApp() {
-    // 1. 공휴일 가져오기 (비동기 시작 - 완료되면 위 fetchHolidays에서 renderCalendar 호출함)
+    // 1. 공휴일 가져오기 시작 (비동기)
     fetchHolidays(currentYear);
 
-    // 2. 파이어베이스 감시 (데이터 오면 알아서 renderCalendar 실행됨)
+    // 2. 파이어베이스 감시 (데이터 오면 즉시 다시 그림)
     onSnapshot(doc(db, "work_planner", "data"), (snap) => {
         if (snap.exists()) {
             data = snap.data();
@@ -279,7 +279,7 @@ function initApp() {
         }
     });
 
-    // 3. 일단 즉시 화면 그리기 (숫자라도 먼저 띄움)
+    // 3. 일단 즉시 화면 그리기 (숫자라도 먼저 띄워서 답답함 해소)
     renderCalendar();
 }
 
@@ -325,15 +325,15 @@ async function fetchHolidays(year) {
         const hMap = {};
         hData.forEach(h => { 
             const d = new Date(h.date); 
+            // 키 형식을 renderCalendar와 동일하게 맞춤
             hMap[`${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`] = h.localName; 
         });
         cachedHolidays[year] = hMap;
 
-        // [핵심] 데이터가 도착했으니 화면을 다시 그려라!
+        // [중요] 데이터가 도착했으니 화면을 다시 그리라고 명령!
         renderCalendar(); 
         return hMap;
     } catch (e) { 
-        console.error("공휴일 로드 실패:", e);
         return {}; 
     }
 }
