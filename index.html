@@ -319,21 +319,29 @@ let cachedHolidays = {};
             if (dayOfWeek === 0 || holidayName) dayClass += " sun";
             if (dayOfWeek === 6) dayClass += " sat";
             if (currentYear === now.getFullYear() && currentMonth === now.getMonth() && d === now.getDate()) dayClass += " today";
+        // if (currentYear === now.getFullYear() && currentMonth === now.getMonth() && d === now.getDate()) dayClass += " today";
 
 const sortedTags = userEvents.filter(ev => !ev.isHoliday).sort((a, b) => (b.isWork || 0) - (a.isWork || 0));
 
     // 3. 화면 출력 (날짜 -> 근무 -> 공휴일 이름 -> 일반 일정 순서)
-    grid.innerHTML += `
-        <div class="${dayClass}" ondblclick="openModal('${dateStr}')">
-            <span class="date-num">${d}</span>
-            <div class="event-container">
-                ${sortedTags.filter(ev => ev.isWork).map(ev => `<span class="event-tag" style="background:${ev.color || '#eee'}; display:block;">${ev.text}</span>`).join('')}
-                
-                ${holidayName ? `<span class="holiday-label" style="display:block; color:red; font-size:0.8em; margin:2px 0;">${holidayName}</span>` : ''}
-                
-                ${sortedTags.filter(ev => !ev.isWork).map(ev => `<span class="event-tag" style="background:${ev.color || '#eee'}; display:block;">${ev.text}</span>`).join('')}
-            </div>
-        </div>`;
+grid.innerHTML += `
+    <div class="${dayClass}" ondblclick="openModal('${dateStr}')">
+        <span class="date-num">${d}</span>
+        <div class="event-container">
+            ${sortedTags.filter(ev => ev.isWork).map(ev => 
+                `<span class="event-tag" style="background:${ev.color || '#eee'}; display:block;">${ev.text}</span>`
+            ).join('')}
+            
+            ${holidayName ? `
+                <span class="holiday-label" style="display:block; color:red; font-size:0.75em; font-weight:normal; margin:1px 0; line-height:1.2;">
+                    ${holidayName}
+                </span>` : ''}
+            
+            ${sortedTags.filter(ev => !ev.isWork).map(ev => 
+                `<span class="event-tag" style="background:${ev.color || '#eee'}; display:block;">${ev.text}</span>`
+            ).join('')}
+        </div>
+    </div>`;
 }
 }
 
@@ -432,7 +440,7 @@ window.openYearlyView = async () => {
         const container = document.getElementById('yearly-list-container'); 
         container.innerHTML = '<div style="text-align:center; padding:20px;">데이터 로딩 중...</div>';
         
-        document.getElementById('yearly-modal').style.display = 'flex';
+        document.getElementById('').style.display = 'flex';
         document.getElementById('overlay').style.display = 'block';
 
         const hList = await fetchHolidays(currentYear); 
@@ -446,7 +454,7 @@ window.openYearlyView = async () => {
             let mHtml = '';
             const lastDay = new Date(currentYear, m, 0).getDate();
             for(let d = 1; d <= lastDay; d++) {
-                const dateStr = `${currentYear}-${m}-${d}`;
+                const dateStr = `${m}-${d}`;
                 const fixH = hList[`${m}-${d}`];
                 const dayEvents = data[dateStr] || [];
                 
