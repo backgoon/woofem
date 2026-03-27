@@ -240,7 +240,17 @@
 
     // [홀브 이식] 음력/양력 공휴일 계산기 로직
 let cachedHolidays = {};
+    
+async function prepareData() {
+    // 1. 올해 공휴일을 미리 가져와서 변수에 저장 (딱 한 번만 통신)
+    await fetchHolidays(currentYear);
+    
+    // 2. 데이터가 오면 바로 달력을 그립니다.
+    renderCalendar();
+}
 
+// [수정] 페이지 로드 시 renderCalendar 대신 prepareData를 실행
+window.onload = prepareData;
     
     // const getHolidays = (year) => {
     //     // 양력 고정 공휴일 (승일 님 요청: '삼일절' 등 한글 명칭 정확히)
@@ -281,7 +291,7 @@ let cachedHolidays = {};
         ['일','월','화','수','목','금','토'].forEach(d => grid.innerHTML += `<div class="day-header">${d}</div>`);
         for(let i=0; i<firstDay; i++) grid.innerHTML += `<div class="day"></div>`;
 
-        const holidayList = cachedHolidays || {};
+        const holidayList = cachedHolidays[currentYear] || {};
         // const holidayList = await fetchHolidays(currentYear); // API 호출 추가
 
         for(let d=1; d<=lastDate; d++) {
