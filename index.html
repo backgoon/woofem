@@ -239,60 +239,8 @@
     const cycleColors = { "주": "#e3f2fd", "야": "#ede7f6", "숙": "#fff9c4", "비": "#e8f5e9" };
 
     // [홀브 이식] 음력/양력 공휴일 계산기 로직
-let cachedHolidays = null;
+let cachedHolidays = {};
 
-// 2. [속도 핵심] 페이지 열리자마자 데이터를 딱 한 번만 미리 가져옴
-async function getInitialData() {
-    // 기존에 쓰시던 fetchHolidays를 그대로 호출해서 변수에 담아둡니다.
-    cachedHolidays = await fetchHolidays(currentYear);
-    
-    // 데이터가 준비되면 그때 달력을 그립니다 (로딩 체감 속도 향상)
-    renderCalendar();
-}
-
-// 3. 실행 트리거 (기존의 모든 renderCalendar() 호출을 이걸로 대체)
-window.onload = getInitialData;
-    
-
-async function fetchHolidays(year) {
-    // 1. 이미 데이터가 있으면 바로 반환 (캐시 확인)
-    if (window.holidayCache && window.holidayCache[year]) {
-        return window.holidayCache[year];
-    }
-
-    try {
-        const url = `https://apis.data.go.kr/B190017/service/Key...&solYear=${year}...`;
-        const response = await fetch(url);
-
-        // [중요] 응답이 정상이 아닐 때 (404, 500 등) HTML을 JSON으로 읽지 않게 차단
-        if (!response.ok) {
-            console.warn(`${year}년 공휴일 서버 응답 이상:`, response.status);
-            return {}; 
-        }
-
-        const contentType = response.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-            // 응답이 JSON이 아니라 HTML(<!DOCTYPE...)일 경우 여기서 거름
-            console.error("API가 JSON이 아닌 형식을 보냈습니다:", contentType);
-            return {};
-        }
-
-        const data = await response.json();
-        
-        // 데이터 가공 로직 (가족 일정은 '1-1' 형식)
-        const processed = {};
-        // ... (API 결과 루프 돌며 가공) ...
-        
-        if (!window.holidayCache) window.holidayCache = {};
-        window.holidayCache[year] = processed;
-        return processed;
-
-    } catch (e) {
-        // SyntaxError (Unexpected token <) 등이 여기서 잡힘
-        console.error("공휴일 로드 실패:", e.message);
-        return {}; // 에러가 나도 빈 객체{}를 던져서 달력은 뜨게 만듦
-    }
-}
     
     // const getHolidays = (year) => {
     //     // 양력 고정 공휴일 (승일 님 요청: '삼일절' 등 한글 명칭 정확히)
@@ -313,6 +261,17 @@ async function fetchHolidays(year) {
     onSnapshot(doc(db, "work_planner", "data"), (snap) => { if (snap.exists()) { data = snap.data(); renderCalendar(); } });
     onSnapshot(doc(db, "work_planner", "memo"), (snap) => { if (snap.exists() && document.activeElement.id !== 'memo-area') document.getElementById('memo-area').value = snap.data().text || ""; });
 
+        async function fetchHolidays(year) {
+        if (cachedHolidays[year]) return cachedHolidays[year];
+        try {
+            const res = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/KR`);
+            const hData = await res.json();
+            const hMap = {};
+            hData.forEach(h => { const d = new Date(h.date); hMap[`${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`] = h.localName; });
+            cachedHolidays[year] = hMap; return hMap;
+        } catch (e) { return {}; }
+    }
+    
     async function renderCalendar() {
         const grid = document.getElementById('calendar-grid'); grid.innerHTML = '';
         document.getElementById('display-year').innerText = currentYear;
