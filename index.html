@@ -267,21 +267,22 @@ let cachedHolidays = {};
 
 // // [수정] 페이지 로드 시 renderCalendar 대신 prepareData를 실행
 // window.onload = prepareData;
-    async function initApp() {
-    // [1] API 공휴일 먼저 가져오기
-    await fetchHolidays(currentYear);
-    
-    // [2] 내 일정 데이터 '딱 한 번' 먼저 가져오기 (getDoc 사용)
-    const docRef = doc(db, "work_planner", "data");
-    const snap = await getDoc(docRef); 
-    if (snap.exists()) {
-        data = snap.data();
-    }
-    
-    // [3] 두 데이터가 다 모였을 때 비로소 첫 화면을 그립니다 (동시 출력!)
-    renderCalendar();
-    
-    // [4] 그 다음부터 실시간 업데이트를 켭니다 (깜빡임 방지용)
+async function initApp() {
+    // 1. 내 일정(data)은 로컬에 저장된 게 있다면 바로 가져오기 (없으면 빈값)
+    // 혹은 Firebase에서 getDoc으로 최대한 빨리 당겨오기
+    const snap = await getDoc(doc(db, "work_planner", "data"));
+    if (snap.exists()) data = snap.data();
+
+    // 2. [핵심] 공휴일 API를 '기다리지 말고' 일단 달력부터 그립니다!
+    renderCalendar(); 
+
+    // 3. 백그라운드에서 공휴일을 가져옵니다. (화면은 이미 떠 있는 상태)
+    fetchHolidays(currentYear).then(() => {
+        // 데이터 오면 공휴일 이름만 슥 업데이트
+        renderCalendar(); 
+    });
+
+    // 4. 실시간 감시 시작
     setupRealtime();
 }
 
