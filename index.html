@@ -239,23 +239,20 @@
     const cycleColors = { "주": "#e3f2fd", "야": "#ede7f6", "숙": "#fff9c4", "비": "#e8f5e9" };
 
     // [홀브 이식] 음력/양력 공휴일 계산기 로직
-   let cachedHolidays = {}; // null 대신 빈 객체로 시작하는 게 안전합니다.
+let cachedHolidays = null;
 
+// 2. [속도 핵심] 페이지 열리자마자 데이터를 딱 한 번만 미리 가져옴
 async function getInitialData() {
-    console.time("로딩 속도");
+    // 기존에 쓰시던 fetchHolidays를 그대로 호출해서 변수에 담아둡니다.
+    cachedHolidays = await fetchHolidays(currentYear);
     
-    // fetchHolidays가 실패해서 {}를 리턴해도 앱은 죽지 않습니다.
-    const result = await fetchHolidays(currentYear);
-    cachedHolidays = result || {}; 
-    
-    console.timeEnd("로딩 속도");
-    
-    // 이제 renderCalendar를 실행해도 'null' 에러가 나지 않습니다.
+    // 데이터가 준비되면 그때 달력을 그립니다 (로딩 체감 속도 향상)
     renderCalendar();
 }
+
+// 3. 실행 트리거 (기존의 모든 renderCalendar() 호출을 이걸로 대체)
+window.onload = getInitialData;
     
-    // 3. 페이지가 뜨자마자 실행 (기본 renderCalendar() 호출 대신 이걸 사용)
-    window.onload = getInitialData;
 
 async function fetchHolidays(year) {
     // 1. 이미 데이터가 있으면 바로 반환 (캐시 확인)
