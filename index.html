@@ -391,6 +391,7 @@ grid.innerHTML += `
 window.deletePattern = async function() {
     const targetMonth = (currentMonth + 1).toString();
     const newData = { ...window.data };
+    console.log(newData);
     let toDeleteList = []; // 삭제될 대상들을 담을 바구니
 
     // 1. 먼저 삭제 대상이 있는지 훑어보기
