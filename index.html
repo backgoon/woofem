@@ -257,16 +257,46 @@
     // [홀브 이식] 음력/양력 공휴일 계산기 로직
 let cachedHolidays = {};
     
-async function prepareData() {
-    // 1. 올해 공휴일을 미리 가져와서 변수에 저장 (딱 한 번만 통신)
+// async function prepareData() {
+//     // 1. 올해 공휴일을 미리 가져와서 변수에 저장 (딱 한 번만 통신)
+//     await fetchHolidays(currentYear);
+    
+//     // 2. 데이터가 오면 바로 달력을 그립니다.
+//     renderCalendar();
+// }
+
+// // [수정] 페이지 로드 시 renderCalendar 대신 prepareData를 실행
+// window.onload = prepareData;
+    async function initApp() {
+    // [1] API 공휴일 먼저 가져오기
     await fetchHolidays(currentYear);
     
-    // 2. 데이터가 오면 바로 달력을 그립니다.
+    // [2] 내 일정 데이터 '딱 한 번' 먼저 가져오기 (getDoc 사용)
+    const docRef = doc(db, "work_planner", "data");
+    const snap = await getDoc(docRef); 
+    if (snap.exists()) {
+        data = snap.data();
+    }
+    
+    // [3] 두 데이터가 다 모였을 때 비로소 첫 화면을 그립니다 (동시 출력!)
     renderCalendar();
+    
+    // [4] 그 다음부터 실시간 업데이트를 켭니다 (깜빡임 방지용)
+    setupRealtime();
 }
 
-// [수정] 페이지 로드 시 renderCalendar 대신 prepareData를 실행
-window.onload = prepareData;
+// 실시간 감시는 별도 함수로 분리
+function setupRealtime() {
+    onSnapshot(doc(db, "work_planner", "data"), (snap) => {
+        if (snap.exists()) {
+            data = snap.data();
+            renderCalendar(); // 이후 수정사항만 반영
+        }
+    });
+    // 메모 부분은 그대로 두셔도 됩니다.
+}
+
+window.onload = initApp;
     
     // const getHolidays = (year) => {
     //     // 양력 고정 공휴일 (승일 님 요청: '삼일절' 등 한글 명칭 정확히)
@@ -284,8 +314,8 @@ window.onload = prepareData;
     //     return year === 2026 ? { ...solar, ...lunar2026 } : solar;
     // };
 
-    onSnapshot(doc(db, "work_planner", "data"), (snap) => { if (snap.exists()) { data = snap.data(); renderCalendar(); } });
-    onSnapshot(doc(db, "work_planner", "memo"), (snap) => { if (snap.exists() && document.activeElement.id !== 'memo-area') document.getElementById('memo-area').value = snap.data().text || ""; });
+    // onSnapshot(doc(db, "work_planner", "data"), (snap) => { if (snap.exists()) { data = snap.data(); renderCalendar(); } });
+    // onSnapshot(doc(db, "work_planner", "memo"), (snap) => { if (snap.exists() && document.activeElement.id !== 'memo-area') document.getElementById('memo-area').value = snap.data().text || ""; });
 
 async function fetchHolidays(year) {
     // 이미 데이터가 있다면 서버에 가지 않고 바로 반환 (이게 속도의 핵심)
