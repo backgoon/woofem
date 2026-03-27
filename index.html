@@ -268,31 +268,20 @@ let cachedHolidays = {};
 // // [수정] 페이지 로드 시 renderCalendar 대신 prepareData를 실행
 // window.onload = prepareData;
 async function initApp() {
-    try {
-        // 1. 내 일정(Firebase) 한 번만 가져오기
-        const docRef = doc(db, "work_planner", "data");
-        const snap = await getDoc(docRef); 
-        
-        if (snap.exists()) {
-            // [중요] 전역 변수 data에 데이터를 직접 할당합니다.
-            window.data = snap.data(); 
-            console.log("데이터 로드 성공:", window.data); // 데이터가 잘 오는지 확인용
-        } else {
-            console.log("데이터가 존재하지 않습니다.");
-        }
-
-        // 2. 데이터가 있든 없든 일단 달력을 그립니다.
-        renderCalendar();
-
-        // 3. 공휴일 API는 백그라운드에서 가져옵니다.
-        fetchHolidays(currentYear);
-
-        // 4. 이후 실시간 변경사항을 위해 감시 모드 작동
-        setupRealtime();
-    } catch (error) {
-        console.error("초기화 중 오류 발생:", error);
-        renderCalendar(); // 에러 나더라도 틀은 그려야 함
+    // 1. [속도] getDoc으로 데이터 한 번만 잽싸게 가져오기
+    const snap = await getDoc(doc(db, "work_planner", "data"));
+    if (snap.exists()) {
+        window.data = snap.data(); // 전역 변수에 저장
     }
+
+    // 2. [즉시 실행] 데이터 가져오자마자 달력 그리기 (일정 바로 나타남)
+    renderCalendar();
+
+    // 3. [백그라운드] 공휴일은 천천히 가져오기 (안 기다림)
+    fetchHolidays(currentYear);
+
+    // 4. 실시간 감시 시작
+    setupRealtime();
 }
 
 function setupRealtime() {
@@ -364,15 +353,18 @@ async function fetchHolidays(year) {
     const currentData = window.data || {}; // 전역 변수 사용
    for (let d = 1; d <= lastDate; d++) {
     const dayOfWeek = new Date(currentYear, currentMonth, d).getDay();
-    const dateStr = `${currentMonth + 1}-${d}`; // '3-27' 형식
-    const dayEvents = currentData[dateStr] || []; // [핵심] 여기서 일정을 가져옵니다.
-    const holidayList = cachedHolidays[currentYear] || {};
-    const fixH = holidayList[dateStr]; // API 공휴일
-    // const dayEvents = data[dateStr] || []; // 내 일정/근무
+    
+    // [핵심] 2026-1-1이 아니라 무조건 1-1 형식!!
+    const dateStr = `${currentMonth + 1}-${d}`; 
+    
+    const holidayList = (window.cachedHolidays && cachedHolidays[currentYear]) ? cachedHolidays[currentYear] : {};
+    const fixH = holidayList[dateStr]; // API 공휴일 (이것도 1-1로 저장됨)
+    
+    const dayEvents = window.data[dateStr] || []; // 내 일정 (1-1로 매칭!)
     const userH = dayEvents.find(ev => ev.isHoliday); 
     const hName = fixH || (userH ? userH.text : ""); 
 
-    // 스타일 결정 (일요일, API공휴일, 사용자공휴일 모두 빨간색)
+    // 스타일 결정 (일요일/공휴일 빨간색)
     let dayClass = (dayOfWeek === 0 || fixH || userH) ? "day sun" : (dayOfWeek === 6 ? "day sat" : "day");
 
     // 오늘 날짜 표시
@@ -381,7 +373,7 @@ async function fetchHolidays(year) {
         dayClass += " today";
     }
 
-    // 근무와 일정 그리기
+    // 일정 태그 생성 (근무/개인일정)
     const eventHtml = dayEvents.filter(ev => !ev.isHoliday).map(ev => {
         const task = ev.text.trim();
         const bgColor = ev.isWork ? (cycleColors[task] || ev.color) : ev.color;
