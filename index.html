@@ -268,20 +268,26 @@ let cachedHolidays = {};
 // // [수정] 페이지 로드 시 renderCalendar 대신 prepareData를 실행
 // window.onload = prepareData;
 async function initApp() {
-    // 1. [속도] getDoc으로 데이터 한 번만 잽싸게 가져오기
-    const snap = await getDoc(doc(db, "work_planner", "data"));
-    if (snap.exists()) {
-        window.data = snap.data(); // 전역 변수에 저장
-    }
-
-    // 2. [즉시 실행] 데이터 가져오자마자 달력 그리기 (일정 바로 나타남)
+    // 1. 일단 빈 달력이라도 0.1초 만에 띄웁니다 (카톡 속도 해결)
     renderCalendar();
 
-    // 3. [백그라운드] 공휴일은 천천히 가져오기 (안 기다림)
+    // 2. 공휴일 가져오기 (비동기)
     fetchHolidays(currentYear);
 
-    // 4. 실시간 감시 시작
-    setupRealtime();
+    // 3. 내 일정(Firebase) 가져오기
+    const snap = await getDoc(doc(db, "work_planner", "data"));
+    if (snap.exists()) {
+        window.data = snap.data(); // 데이터 채우기
+        renderCalendar();          // [중요] 데이터 왔으니까 다시 그려라!
+    }
+
+    // 4. 실시간 감시 (나중에 수정할 때 대비)
+    onSnapshot(doc(db, "work_planner", "data"), (snap) => {
+        if (snap.exists()) {
+            window.data = snap.data();
+            renderCalendar(); 
+        }
+    });
 }
 
 function setupRealtime() {
@@ -354,13 +360,15 @@ async function fetchHolidays(year) {
         const dayOfWeek = new Date(currentYear, currentMonth, d).getDay();
         
         // [약속] 승일 님 데이터 형식 '1-1' (2026- 빼고!)
-        const dateStr = `${currentMonth + 1}-${d}`; 
-        
-        const holidayList = (window.cachedHolidays && cachedHolidays[currentYear]) ? cachedHolidays[currentYear] : {};
-        const fixH = holidayList[dateStr]; // API 공휴일
-        
-        // 위에서 만든 currentData를 사용합니다.
-        const dayEvents = currentData[dateStr] || []; 
+        const dateStr = `${currentMonth + 1}-${d}`; // '1-1' 형식 (2026- 없음!)
+    
+    // 데이터 상자 열기
+        const holidayList = (cachedHolidays && cachedHolidays[currentYear]) ? cachedHolidays[currentYear] : {};
+        const currentData = window.data || {}; 
+    
+        // 매칭 시작
+        const fixH = holidayList[dateStr];    // API 공휴일 (1-1로 매칭)
+        const dayEvents = currentData[dateStr] || []; // 내 일정/근무 (1-1로 매칭)
         const userH = dayEvents.find(ev => ev.isHoliday); 
         const hName = fixH || (userH ? userH.text : ""); 
 
