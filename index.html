@@ -258,7 +258,6 @@
 let cachedHolidays = {};
     
 async function prepareData() {
-    renderCalendar();
     // 1. 올해 공휴일을 미리 가져와서 변수에 저장 (딱 한 번만 통신)
     await fetchHolidays(currentYear);
     
@@ -307,6 +306,7 @@ async function fetchHolidays(year) {
 }
     
     async function renderCalendar() {
+    if (!data || Object.keys(data).length === 0) return;
     const grid = document.getElementById('calendar-grid');
     grid.innerHTML = '';
     document.getElementById('display-year').innerText = currentYear;
