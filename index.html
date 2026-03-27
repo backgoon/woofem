@@ -389,50 +389,39 @@ grid.innerHTML += `
     // [복구] 특정 텍스트(패턴)를 가진 모든 일정 삭제
 // window 객체에 직접 붙여서 버튼(onclick)이 언제든 찾을 수 있게 합니다.
 window.deletePattern = async function() {
-    const targetMonth = (currentMonth + 1).toString();
-    const newData = { ...window.data };
-    console.log(newData);
-    let toDeleteList = []; // 삭제될 대상들을 담을 바구니
+    // 1. 현재 달력의 마지막 날짜 구하기
+    const lastDate = new Date(currentYear, currentMonth + 1, 0).getDate();
+    let deletedCount = 0;
 
-    // 1. 먼저 삭제 대상이 있는지 훑어보기
-    for (const dateStr in newData) {
-        if (dateStr.startsWith(`${targetMonth}-`)) {
-            // isWork가 true인 것들만 골라내기
-            const targets = newData[dateStr].filter(ev => ev.isWork);
-            targets.forEach(ev => {
-                toDeleteList.push({ 날짜: dateStr, 일정: ev.text, 근무여부: ev.isWork });
-            });
-        }
-    }
-
-    // 2. 콘솔에 먼저 보여주기
-    if (toDeleteList.length > 0) {
-        console.log(`--- [${targetMonth}월 삭제 예정 근무 리스트] ---`);
-        console.table(toDeleteList); // 테이블 형식으로 예쁘게 보여줍니다
-        console.log(`총 ${toDeleteList.length}개의 일정을 찾았습니다.`);
-    } else {
-        console.log(`${targetMonth}월에는 삭제할 근무 데이터가 없습니다.`);
-        alert(`${targetMonth}월에는 삭제할 근무 일정이 없습니다.`);
-        return;
-    }
-
-    // 3. 확인창 띄우기
-    if (confirm(`${targetMonth}월의 근무 일정 ${toDeleteList.length}개를 모두 삭제하시겠습니까? (콘솔창에서 목록 확인 가능)`)) {
-        for (const dateStr in newData) {
-            if (dateStr.startsWith(`${targetMonth}-`)) {
-                // 근무가 아닌 것들만 남기기 (근무 삭제)
-                newData[dateStr] = newData[dateStr].filter(ev => !ev.isWork);
+    if (confirm(`${currentMonth + 1}월의 모든 근무 일정을 삭제하시겠습니까?`)) {
+        // 2. 1일부터 말일까지 루프 돌면서 해당 월의 데이터만 건드림
+        for (let d = 1; d <= lastDate; d++) {
+            // [중요] 승일 님 코드의 날짜 형식: 2026-3-27
+            const dateStr = `${currentYear}-${currentMonth + 1}-${d}`;
+            
+            if (data[dateStr]) {
+                const originalLength = data[dateStr].length;
+                
+                // 3. 'isWork'가 true인 근무 데이터만 필터링해서 제거
+                data[dateStr] = data[dateStr].filter(ev => !ev.isWork);
+                
+                deletedCount += (originalLength - data[dateStr].length);
             }
         }
 
-        try {
-            await setDoc(doc(db, "work_planner", "data"), newData);
-            window.data = newData;
-            renderCalendar();
-            alert("성공적으로 삭제되었습니다.");
-        } catch (e) {
-            console.error("삭제 실패:", e);
-            alert("오류가 발생했습니다.");
+        if (deletedCount > 0) {
+            try {
+                // 4. 승일 님 방식 그대로 파이어베이스 저장
+                await setDoc(doc(db, "work_planner", "data"), data);
+                
+                alert(`${currentMonth + 1}월의 근무 일정 ${deletedCount}개가 삭제되었습니다.`);
+                renderCalendar(); // 화면 새로고침
+            } catch (e) {
+                console.error("삭제 중 오류:", e);
+                alert("저장 중 오류가 발생했습니다.");
+            }
+        } else {
+            alert(`${currentMonth + 1}월에는 삭제할 근무 일정이 없습니다.`);
         }
     }
 };
