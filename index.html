@@ -267,20 +267,26 @@ let cachedHolidays = {};
 
 // // [수정] 페이지 로드 시 renderCalendar 대신 prepareData를 실행
 // window.onload = prepareData;
-function initApp() {
-    // 1. 공휴일 가져오기 (비동기 시작 - 기다리지 않음)
+async function initApp() {
+    // [1] 내 일정(Firebase) '딱 한 번' 먼저 확실히 가져오기
+    const snap = await getDoc(doc(db, "work_planner", "data"));
+    if (snap.exists()) {
+        data = snap.data();
+    }
+
+    // [2] 일단 내 일정이 담긴 달력을 즉시 그립니다. (이 시점에 일정 등장!)
+    renderCalendar();
+
+    // [3] 공휴일 API는 백그라운드에서 가져옵니다. (기다리지 않음)
     fetchHolidays(currentYear);
 
-    // 2. 파이어베이스 데이터 감시 (기다리지 않음 - 오면 다시 그림)
+    // [4] 이후 실시간 수정사항 반영을 위해 감시 모드 켜기
     onSnapshot(doc(db, "work_planner", "data"), (snap) => {
         if (snap.exists()) {
-            window.data = snap.data();
-            renderCalendar(); // 데이터 도착 즉시 리렌더링
+            data = snap.data();
+            renderCalendar(); 
         }
     });
-
-    // 3. [핵심] 0.01초 만에 일단 빈 달력이라도 먼저 뿌리기
-    renderCalendar();
 }
 
 window.onload = initApp;
