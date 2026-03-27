@@ -229,6 +229,7 @@
         </select>
     </div>
     <button class="add-btn" style="background:var(--blue); margin-bottom: 10px;" onclick="applyPattern()">해당 월 패턴 일괄 적용</button>
+    <button onclick="deletePattern()" style="background-color: #ff4d4d; color: white;">패턴 일괄 삭제</button>
     <div onclick="closeAll()" style="text-align:center; color:#aaa; cursor:pointer; font-size: 14px;">설정 취소</div>
 </div>
 
@@ -384,6 +385,39 @@ grid.innerHTML += `
             }
         }
     };
+
+    // [복구] 특정 텍스트(패턴)를 가진 모든 일정 삭제
+async function deletePattern() {
+    const pattern = prompt("삭제할 일정의 이름(패턴)을 입력하세요. (예: 주)");
+    if (!pattern) return;
+
+    if (confirm(`모든 날짜에서 '${pattern}' 일정을 전부 삭제하시겠습니까?`)) {
+        const newData = { ...window.data };
+        let deletedCount = 0;
+
+        // 모든 날짜(1-1, 1-2 등)를 순회하며 해당 패턴 삭제
+        for (const date in newData) {
+            const originalLength = newData[date].length;
+            newData[date] = newData[date].filter(ev => ev.text.trim() !== pattern.trim());
+            deletedCount += (originalLength - newData[date].length);
+        }
+
+        if (deletedCount > 0) {
+            try {
+                // 파이어베이스 업데이트 (승일 님 기존 경로: work_planner/data)
+                await setDoc(doc(db, "work_planner", "data"), newData);
+                window.data = newData;
+                renderCalendar();
+                alert(`총 ${deletedCount}개의 '${pattern}' 일정이 삭제되었습니다.`);
+            } catch (e) {
+                alert("삭제 중 오류가 발생했습니다.");
+            }
+        } else {
+            alert("삭제할 일정이 없습니다.");
+        }
+    }
+}
+    
     window.openModal = (d) => {
         selectedDate = d; editIndex = null; document.getElementById('event-input').value = '';
         document.getElementById('is-holiday').checked = false;
