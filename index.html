@@ -320,6 +320,12 @@ let cachedHolidays = {};
             if (dayOfWeek === 6) dayClass += " sat";
             if (currentYear === now.getFullYear() && currentMonth === now.getMonth() && d === now.getDate()) dayClass += " today";
 
+            const sortedEvents = userEvents.filter(ev => !ev.isHoliday).sort((a, b) => {
+                if (a.isWork && !b.isWork) return -1;
+                if (!a.isWork && b.isWork) return 1;
+                return 0;
+            });
+        
             grid.innerHTML += `<div class="${dayClass}" ondblclick="openModal('${dateStr}')">
                 <span class="date-num">${d}</span>
                 ${holidayName ? `<span class="holiday-label">${holidayName}</span>` : ''}
