@@ -267,39 +267,6 @@ let cachedHolidays = {};
 
 // // [수정] 페이지 로드 시 renderCalendar 대신 prepareData를 실행
 // window.onload = prepareData;
-async function initApp() {
-    // 1. 일단 빈 달력이라도 0.1초 만에 띄웁니다 (카톡 속도 해결)
-    renderCalendar();
-
-    // 2. 공휴일 가져오기 (비동기)
-    fetchHolidays(currentYear);
-
-    // 3. 내 일정(Firebase) 가져오기
-    const snap = await getDoc(doc(db, "work_planner", "data"));
-    if (snap.exists()) {
-        window.data = snap.data(); // 데이터 채우기
-        renderCalendar();          // [중요] 데이터 왔으니까 다시 그려라!
-    }
-
-    // 4. 실시간 감시 (나중에 수정할 때 대비)
-    onSnapshot(doc(db, "work_planner", "data"), (snap) => {
-        if (snap.exists()) {
-            window.data = snap.data();
-            renderCalendar(); 
-        }
-    });
-}
-
-function setupRealtime() {
-    onSnapshot(doc(db, "work_planner", "data"), (snap) => {
-        if (snap.exists()) {
-            data = snap.data();
-            renderCalendar(); // 수정사항 있을 때만 다시 그림
-        }
-    });
-}
-
-window.onload = initApp;
     
     // const getHolidays = (year) => {
     //     // 양력 고정 공휴일 (승일 님 요청: '삼일절' 등 한글 명칭 정확히)
@@ -317,85 +284,47 @@ window.onload = initApp;
     //     return year === 2026 ? { ...solar, ...lunar2026 } : solar;
     // };
 
-    // onSnapshot(doc(db, "work_planner", "data"), (snap) => { if (snap.exists()) { data = snap.data(); renderCalendar(); } });
-    // onSnapshot(doc(db, "work_planner", "memo"), (snap) => { if (snap.exists() && document.activeElement.id !== 'memo-area') document.getElementById('memo-area').value = snap.data().text || ""; });
+    onSnapshot(doc(db, "work_planner", "data"), (snap) => { if (snap.exists()) { data = snap.data(); renderCalendar(); } });
+    onSnapshot(doc(db, "work_planner", "memo"), (snap) => { if (snap.exists() && document.activeElement.id !== 'memo-area') document.getElementById('memo-area').value = snap.data().text || ""; });
 
-async function fetchHolidays(year) {
-    if (cachedHolidays[year]) return cachedHolidays[year];
-    try {
-        const res = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/KR`);
-        const hData = await res.json();
-        const hMap = {};
-        hData.forEach(h => {
-            const d = new Date(h.date);
-            // '1-1' 형식으로 저장해서 data와 매칭되게 함
-            hMap[`${d.getMonth() + 1}-${d.getDate()}`] = h.localName;
-        });
-        cachedHolidays[year] = hMap;
-        return hMap;
-    } catch (e) {
-        return {};
+    async function fetchHolidays(year) {
+        if (cachedHolidays[year]) return cachedHolidays[year];
+        try {
+            const res = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/KR`);
+            const hData = await res.json();
+            const hMap = {};
+            hData.forEach(h => { const d = new Date(h.date); hMap[`${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`] = h.localName; });
+            cachedHolidays[year] = hMap; return hMap;
+        } catch (e) { return {}; }
     }
-}
     
   async function renderCalendar() {
     const grid = document.getElementById('calendar-grid');
-    if (!grid) return;
     grid.innerHTML = '';
-
-    // [방패] 데이터가 아직 서버에서 안 왔어도 빈 상자({})로 취급해서 에러 방지!
-    // window.data가 undefined여도 '3-1'을 읽을 때 에러가 나지 않습니다.
-    const currentData = window.data || {}; 
-
-    // 연도/월 표시
     document.getElementById('display-year').innerText = currentYear;
     document.getElementById('month-display').innerText = `${currentMonth + 1}월`;
 
-    const firstDay = new Date(currentYear, currentMonth, 1).getDay();
-    const lastDate = new Date(currentYear, currentMonth + 1, 0).getDate();
-
-    // 헤더 및 빈칸 그리기... (기존 동일)
-
+    const holidays = await fetchHolidays(currentYear);
+    const firstDay = new Date(currentYear, currentMonth, 1).getDay(), lastDate = new Date(currentYear, currentMonth + 1, 0).getDate();
+    ['일','월','화','수','목','금','토'].forEach(d => grid.innerHTML += `<div class="day-header">${d}</div>`);
+    for(let i=0; i<firstDay; i++) grid.innerHTML += `<div class="day"></div>`;
+      
+    const now = new Date();
     for (let d = 1; d <= lastDate; d++) {
-        const dayOfWeek = new Date(currentYear, currentMonth, d).getDay();
-        
-        // [약속] 승일 님 데이터 형식 '1-1' (2026- 빼고!)
-        const dateStr = `${currentMonth + 1}-${d}`; // '1-1' 형식 (2026- 없음!)
-    
-    // 데이터 상자 열기
-        const holidayList = (cachedHolidays && cachedHolidays[currentYear]) ? cachedHolidays[currentYear] : {};
-        const currentData = window.data || {}; 
-    
-        // 매칭 시작
-        const fixH = holidayList[dateStr];    // API 공휴일 (1-1로 매칭)
-        const dayEvents = currentData[dateStr] || []; // 내 일정/근무 (1-1로 매칭)
-        const userH = dayEvents.find(ev => ev.isHoliday); 
-        const hName = fixH || (userH ? userH.text : ""); 
+        const dateStr = `${currentYear}-${currentMonth+1}-${d}`, dayOfWeek = new Date(currentYear, currentMonth, d).getDay();
+            const userEvents = data[dateStr] || [], isUserHoliday = userEvents.find(ev => ev.isHoliday);
+            let holidayName = holidays[dateStr] || (isUserHoliday ? isUserHoliday.text : '');
 
-        // 스타일 (일요일/공휴일 빨간색)
-        let dayClass = (dayOfWeek === 0 || fixH || userH) ? "day sun" : (dayOfWeek === 6 ? "day sat" : "day");
+            let dayClass = "day";
+            if (dayOfWeek === 0 || holidayName) dayClass += " sun";
+            if (dayOfWeek === 6) dayClass += " sat";
+            if (currentYear === now.getFullYear() && currentMonth === now.getMonth() && d === now.getDate()) dayClass += " today";
 
-    // 오늘 날짜 표시
-    const today = new Date();
-    if (currentYear === today.getFullYear() && currentMonth === today.getMonth() && d === today.getDate()) {
-        dayClass += " today";
-    }
-
-    // 일정 태그 생성 (근무/개인일정)
-    const eventHtml = dayEvents.filter(ev => !ev.isHoliday).map(ev => {
-        const task = ev.text.trim();
-        const bgColor = ev.isWork ? (cycleColors[task] || ev.color) : ev.color;
-        return `<span class="event-tag" style="background-color:${bgColor} !important; display:block;">${ev.text}</span>`;
-    }).join('');
-
-    grid.innerHTML += `
-        <div class="${dayClass}" ondblclick="openModal('${dateStr}')">
-            <span class="date-num">${d}</span>
-            <div class="event-container">
-                ${eventHtml}
-                ${hName ? `<span class="holiday-label">${hName}</span>` : ''}
-            </div>
-        </div>`;
+            grid.innerHTML += `<div class="${dayClass}" ondblclick="openModal('${dateStr}')">
+                <span class="date-num">${d}</span>
+                ${holidayName ? `<span class="holiday-label">${holidayName}</span>` : ''}
+                <div class="event-container">${userEvents.filter(ev => !ev.isHoliday).map(ev => `<span class="event-tag" style="background:${ev.color || '#eee'};">${ev.text}</span>`).join('')}</div>
+            </div>`;
 }
 }
 
