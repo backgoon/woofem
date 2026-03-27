@@ -319,8 +319,8 @@ window.onload = initApp;
     //     return year === 2026 ? { ...solar, ...lunar2026 } : solar;
     // };
 
-    // onSnapshot(doc(db, "work_planner", "data"), (snap) => { if (snap.exists()) { data = snap.data(); renderCalendar(); } });
-    // onSnapshot(doc(db, "work_planner", "memo"), (snap) => { if (snap.exists() && document.activeElement.id !== 'memo-area') document.getElementById('memo-area').value = snap.data().text || ""; });
+    onSnapshot(doc(db, "work_planner", "data"), (snap) => { if (snap.exists()) { data = snap.data(); renderCalendar(); } });
+    onSnapshot(doc(db, "work_planner", "memo"), (snap) => { if (snap.exists() && document.activeElement.id !== 'memo-area') document.getElementById('memo-area').value = snap.data().text || ""; });
 
 async function fetchHolidays(year) {
     if (cachedHolidays[year]) return cachedHolidays[year];
@@ -340,58 +340,65 @@ async function fetchHolidays(year) {
     }
 }
     
-   async function renderCalendar() {
+  async function renderCalendar() {
     const grid = document.getElementById('calendar-grid');
     if (!grid) return;
     grid.innerHTML = '';
 
-    // 1. 연도와 월 표시
+    // 1. 기본 정보 표시
     document.getElementById('display-year').innerText = currentYear;
     document.getElementById('month-display').innerText = `${currentMonth + 1}월`;
 
-    // 2. 요일 헤더 및 시작일 빈칸 (기존과 동일)
     const firstDay = new Date(currentYear, currentMonth, 1).getDay();
     const lastDate = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+    // 요일 헤더 & 빈칸
     ['일','월','화','수','목','금','토'].forEach(d => grid.innerHTML += `<div class="day-header">${d}</div>`);
     for(let i=0; i<firstDay; i++) grid.innerHTML += `<div class="day"></div>`;
 
-    // 3. [복구 핵심] 공휴일 데이터를 확실히 가져올 때까지 기다립니다.
+    // 2. 공휴일 데이터 가져오기 (기다림)
     const holidayList = await fetchHolidays(currentYear) || {};
 
     for (let d = 1; d <= lastDate; d++) {
         const dayOfWeek = new Date(currentYear, currentMonth, d).getDay();
-        // 승일 님의 데이터 형식인 '월-일'로 통일
+        
+        // [중요] 승일 님의 데이터 형식인 '월-일' (예: 3-27)
         const dateStr = `${currentMonth + 1}-${d}`; 
         
-        // 4. 데이터 매칭
-        const fixH = holidayList[dateStr]; // API 공휴일 (1-1 형식)
-        const events = data[dateStr] || []; // 파이어베이스 내 일정
-        const userH = events.find(ev => ev.isHoliday); 
+        // 3. 데이터 매칭 (여기서 data는 전역변수여야 합니다)
+        const fixH = holidayList[dateStr]; // API 공휴일
+        const dayData = data[dateStr] || []; // [수정] 이 부분이 내 일정과 근무입니다.
+        
+        const userH = dayData.find(ev => ev.isHoliday); 
         const hName = fixH || (userH ? userH.text : ""); 
 
-        // 5. 스타일 결정 (삭제했던 부분 복구)
+        // 4. 스타일 결정 (빨간색 표시)
         let dayClass = (dayOfWeek === 0 || fixH || userH) ? "day sun" : (dayOfWeek === 6 ? "day sat" : "day");
-
-        // 오늘 날짜 표시
         const today = new Date();
         if (currentYear === today.getFullYear() && currentMonth === today.getMonth() && d === today.getDate()) {
             dayClass += " today";
         }
 
-        // 6. 일정 태그 생성 (공휴일 제외한 근무/일정만)
-        const eventHtml = events.filter(ev => !ev.isHoliday).map(ev => {
+        // 5. [핵심] 근무와 일정을 그리는 부분 (정렬 포함)
+        const sortedEvents = [...dayData].sort((a, b) => {
+            if (a.isWork !== b.isWork) return a.isWork ? -1 : 1;
+            return 0;
+        });
+
+        const eventHtml = sortedEvents.filter(ev => !ev.isHoliday).map(ev => {
             const task = ev.text.trim();
+            // 근무라면 색상표에서 가져오고, 아니면 개별 색상 사용
             const bgColor = ev.isWork ? (cycleColors[task] || ev.color) : ev.color;
-            return `<span class="event-tag" style="background-color:${bgColor} !important;">${ev.text}</span>`;
+            return `<span class="event-tag" style="background-color:${bgColor} !important; display: block;">${ev.text}</span>`;
         }).join('');
 
-        // 7. 최종 출력
+        // 6. 최종 출력
         grid.innerHTML += `
             <div class="${dayClass}" ondblclick="openModal('${dateStr}')">
                 <span class="date-num">${d}</span>
                 <div class="event-container">
                     ${eventHtml}
-                    ${hName ? `<span class="holiday-label">${hName}</span>` : ''}
+                    ${hName ? `<span class="holiday-label" style="color:red; font-size:0.8em;">${hName}</span>` : ''}
                 </div>
             </div>`;
     }
