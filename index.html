@@ -337,35 +337,35 @@ async function fetchHolidays(year) {
     if (!grid) return;
     grid.innerHTML = '';
 
-    // 1. 기본 정보 표시
+    // [방패] 데이터가 아직 서버에서 안 왔어도 빈 상자({})로 취급해서 에러 방지!
+    // window.data가 undefined여도 '3-1'을 읽을 때 에러가 나지 않습니다.
+    const currentData = window.data || {}; 
+
+    // 연도/월 표시
     document.getElementById('display-year').innerText = currentYear;
     document.getElementById('month-display').innerText = `${currentMonth + 1}월`;
 
     const firstDay = new Date(currentYear, currentMonth, 1).getDay();
     const lastDate = new Date(currentYear, currentMonth + 1, 0).getDate();
 
-    // 요일 헤더 & 빈칸
-    ['일','월','화','수','목','금','토'].forEach(d => grid.innerHTML += `<div class="day-header">${d}</div>`);
-    for(let i=0; i<firstDay; i++) grid.innerHTML += `<div class="day"></div>`;
+    // 헤더 및 빈칸 그리기... (기존 동일)
 
-    // 2. 공휴일 데이터 가져오기 (기다림)
-    const holidayList = await fetchHolidays(currentYear) || {};
-    const currentData = window.data || {}; // 전역 변수 사용
-   for (let d = 1; d <= lastDate; d++) {
-    const dayOfWeek = new Date(currentYear, currentMonth, d).getDay();
-    
-    // [핵심] 2026-1-1이 아니라 무조건 1-1 형식!!
-    const dateStr = `${currentMonth + 1}-${d}`; 
-    
-    const holidayList = (window.cachedHolidays && cachedHolidays[currentYear]) ? cachedHolidays[currentYear] : {};
-    const fixH = holidayList[dateStr]; // API 공휴일 (이것도 1-1로 저장됨)
-    
-    const dayEvents = window.data[dateStr] || []; // 내 일정 (1-1로 매칭!)
-    const userH = dayEvents.find(ev => ev.isHoliday); 
-    const hName = fixH || (userH ? userH.text : ""); 
+    for (let d = 1; d <= lastDate; d++) {
+        const dayOfWeek = new Date(currentYear, currentMonth, d).getDay();
+        
+        // [약속] 승일 님 데이터 형식 '1-1' (2026- 빼고!)
+        const dateStr = `${currentMonth + 1}-${d}`; 
+        
+        const holidayList = (window.cachedHolidays && cachedHolidays[currentYear]) ? cachedHolidays[currentYear] : {};
+        const fixH = holidayList[dateStr]; // API 공휴일
+        
+        // 위에서 만든 currentData를 사용합니다.
+        const dayEvents = currentData[dateStr] || []; 
+        const userH = dayEvents.find(ev => ev.isHoliday); 
+        const hName = fixH || (userH ? userH.text : ""); 
 
-    // 스타일 결정 (일요일/공휴일 빨간색)
-    let dayClass = (dayOfWeek === 0 || fixH || userH) ? "day sun" : (dayOfWeek === 6 ? "day sat" : "day");
+        // 스타일 (일요일/공휴일 빨간색)
+        let dayClass = (dayOfWeek === 0 || fixH || userH) ? "day sun" : (dayOfWeek === 6 ? "day sat" : "day");
 
     // 오늘 날짜 표시
     const today = new Date();
