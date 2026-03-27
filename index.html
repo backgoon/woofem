@@ -308,13 +308,16 @@ async function fetchHolidays(year) {
         const firstDay = new Date(currentYear, currentMonth, 1).getDay(), lastDate = new Date(currentYear, currentMonth + 1, 0).getDate();
         ['일','월','화','수','목','금','토'].forEach(d => grid.innerHTML += `<div class="day-header">${d}</div>`);
         for(let i=0; i<firstDay; i++) grid.innerHTML += `<div class="day"></div>`;
-
-        const holidayList = cachedHolidays[currentYear] || {};
+        
+        
+        // const holidayList = cachedHolidays[currentYear] || {};
         // const holidayList = await fetchHolidays(currentYear); // API 호출 추가
 
         for(let d=1; d<=lastDate; d++) {
             const dayOfWeek = new Date(currentYear, currentMonth, d).getDay();
             const dateStr = `${currentYear}-${currentMonth+1}-${d}`;
+            const events = data[dateStr] || [];
+            
             const holidayList = cachedHolidays[currentYear] || {};
             const fixH = holidayList[dateStr];
             
@@ -342,7 +345,6 @@ async function fetchHolidays(year) {
 
             // 3. 오늘 날짜 및 스타일 결정
             let dayClass = (dayOfWeek === 0 || fixH) ? "day sun" : (dayOfWeek === 6 ? "day sat" : "day");
-        
             // 만약 "오늘" 표시 로직이 따로 있다면 아래처럼 한 줄 추가 (새로 선언하지 말고 값만 추가)
             const today = new Date();
             if (currentYear === today.getFullYear() && currentMonth === today.getMonth() && d === today.getDate()) {
