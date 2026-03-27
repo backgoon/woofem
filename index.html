@@ -268,18 +268,18 @@ let cachedHolidays = {};
 // // [수정] 페이지 로드 시 renderCalendar 대신 prepareData를 실행
 // window.onload = prepareData;
 function initApp() {
-    // 1. 공휴일 가져오기 시작 (비동기)
+    // 1. 공휴일 가져오기 (비동기 시작 - 기다리지 않음)
     fetchHolidays(currentYear);
 
-    // 2. 파이어베이스 감시 (데이터 오면 즉시 다시 그림)
+    // 2. 파이어베이스 데이터 감시 (기다리지 않음 - 오면 다시 그림)
     onSnapshot(doc(db, "work_planner", "data"), (snap) => {
         if (snap.exists()) {
-            data = snap.data();
-            renderCalendar(); 
+            window.data = snap.data();
+            renderCalendar(); // 데이터 도착 즉시 리렌더링
         }
     });
 
-    // 3. 일단 즉시 화면 그리기 (숫자라도 먼저 띄워서 답답함 해소)
+    // 3. [핵심] 0.01초 만에 일단 빈 달력이라도 먼저 뿌리기
     renderCalendar();
 }
 
@@ -325,22 +325,18 @@ async function fetchHolidays(year) {
         const hMap = {};
         hData.forEach(h => { 
             const d = new Date(h.date); 
-            // 키 형식을 renderCalendar와 동일하게 맞춤
-            hMap[`${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`] = h.localName; 
+            // 승일 님 데이터 형식에 맞게 '월-일'로 저장
+            hMap[`${d.getMonth() + 1}-${d.getDate()}`] = h.localName; 
         });
         cachedHolidays[year] = hMap;
-
-        // [중요] 데이터가 도착했으니 화면을 다시 그리라고 명령!
+        
+        // 데이터 도착했으니 화면 갱신 (지각 방지)
         renderCalendar(); 
-        return hMap;
-    } catch (e) { 
-        return {}; 
-    }
+    } catch (e) { return {}; }
 }
     
     async function renderCalendar() {
     const grid = document.getElementById('calendar-grid');
-    if (!grid) return; // 그리드가 없으면 중단
     grid.innerHTML = '';
     document.getElementById('display-year').innerText = currentYear;
     document.getElementById('month-display').innerText = `${currentMonth + 1}월`;
@@ -363,11 +359,9 @@ async function fetchHolidays(year) {
     const currentData = window.data || {};
     for (let d = 1; d <= lastDate; d++) {
         const dayOfWeek = new Date(currentYear, currentMonth, d).getDay();
-        const dateStr = `${currentYear}-${currentMonth + 1}-${d}`;
-        
-        // 1. 데이터 매칭 (공휴일 & 일정)
-        const fixH = holidayList[dateStr]; // API 공휴일
-        const events = data[dateStr] || []; // 사용자가 저장한 일정/근무
+        const dateStr = `${currentMonth + 1}-${d}`; // '1-1' 형식
+        const fixH = holidayList[dateStr];
+        const events = currentData[dateStr] || [];
         const userH = events.find(ev => ev.isHoliday); // 직접 등록한 공휴일 체크
         const hName = fixH || (userH ? userH.text : ""); // 둘 중 하나라도 있으면 이름 확정
 
