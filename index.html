@@ -239,37 +239,49 @@
     const cycleColors = { "주": "#e3f2fd", "야": "#ede7f6", "숙": "#fff9c4", "비": "#e8f5e9" };
 
     // [홀브 이식] 음력/양력 공휴일 계산기 로직
-    let cachedHolidays = null; 
+   let cachedHolidays = {}; // null 대신 빈 객체로 시작하는 게 안전합니다.
 
 async function getInitialData() {
-    console.time("로딩 속도");
-    
-    // 이미 선언된 currentYear를 그대로 사용합니다.
-    cachedHolidays = await fetchHolidays(currentYear); 
-    
-    console.timeEnd("로딩 속도");
-    
-    // 달력을 그립니다.
-    renderCalendar();
+    try {
+        // currentYear가 정의되어 있는지 확인 후 호출
+        const targetYear = typeof currentYear !== 'undefined' ? currentYear : new Date().getFullYear();
+        
+        const data = await fetchHolidays(targetYear);
+        cachedHolidays = data || {}; // 결과가 없으면 빈 객체라도 할당
+        
+        renderCalendar();
+    } catch (err) {
+        console.error("초기 데이터 로딩 에러:", err);
+        renderCalendar(); // 에러가 나도 달력은 그려야 함
+    }
 }
     
     // 3. 페이지가 뜨자마자 실행 (기본 renderCalendar() 호출 대신 이걸 사용)
     window.onload = getInitialData;
 
-    async function fetchHolidays(year) {
-        if (cachedHolidays[year]) return cachedHolidays[year];
-        try {
-            const res = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/KR`);
-            const hData = await res.json();
-            const hMap = {};
-            hData.forEach(h => { 
-                const d = new Date(h.date); 
-                hMap[`${d.getMonth() + 1}-${d.getDate()}`] = h.localName; 
-            });
-            cachedHolidays[year] = hMap; 
-            return hMap;
-        } catch (e) { return {}; }
+async function fetchHolidays(year) {
+    // 1. 만약 holidayCache가 null이면 빈 객체로 초기화 (에러 방지 핵심)
+    if (!window.holidayCache) window.holidayCache = {};
+    
+    // 2. 이미 해당 연도 데이터가 있다면 바로 반환
+    if (window.holidayCache[year]) return window.holidayCache[year];
+
+    try {
+        const response = await fetch(`현재_사용중인_API_주소_및_파라미터...`);
+        const data = await response.json();
+        
+        // API 응답 구조에 맞게 데이터를 가공해서 저장
+        // (가족 일정은 '1-1', 홀브는 '2026-1-1' 형식이니 주의!)
+        const processedData = {}; 
+        // ... 데이터 가공 로직 ...
+
+        window.holidayCache[year] = processedData;
+        return processedData;
+    } catch (e) {
+        console.error("공휴일 로드 실패:", e);
+        return {}; // 에러 나면 빈 객체라도 돌려줘서 'null' 에러 방지
     }
+}
     
     // const getHolidays = (year) => {
     //     // 양력 고정 공휴일 (승일 님 요청: '삼일절' 등 한글 명칭 정확히)
