@@ -424,6 +424,9 @@ window.openYearlyView = async () => {
         document.getElementById('overlay').style.display = 'block';
 
         const hList = await fetchHolidays(currentYear); 
+
+        console.log("API에서 받은 공휴일 전체 데이터:", hList); // <-- 여기서 데이터 형식을 꼭 확인하세요!
+    
         container.innerHTML = '';
         document.getElementById('yearly-title').innerText = currentYear;
 
