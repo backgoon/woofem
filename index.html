@@ -315,13 +315,10 @@ async function fetchHolidays(year) {
         for(let d=1; d<=lastDate; d++) {
             const dayOfWeek = new Date(currentYear, currentMonth, d).getDay();
             const dateStr = `${currentYear}-${currentMonth+1}-${d}`;
-            
-            // 2. 공휴일 데이터 가져오기 (await 없이 미리 받아둔 캐시 사용)
             const holidayList = cachedHolidays[currentYear] || {};
-            const fixH = holidayList[dateStr]; 
+            const fixH = holidayList[dateStr];
             
-            // 3. 스타일 결정 (여기서 dayOfWeek를 사용함)
-            let dayClass = (dayOfWeek === 0 || fixH) ? "day sun" : (dayOfWeek === 6 ? "day sat" : "day");
+            // [수정 포인트] 아래처럼 '하나의' dayClass 변수에 모든 조건을 다 넣어야 합니다.
             
             // const dayOfWeek = new Date(currentYear, currentMonth, d).getDay();
             // // const dateStr = `${currentYear}-${currentMonth+1}-${d}`;
@@ -344,9 +341,13 @@ async function fetchHolidays(year) {
             });
 
             // 3. 오늘 날짜 및 스타일 결정
-            let dayClass = (dayOfWeek === 0 || hName) ? "day sun" : (dayOfWeek === 6 ? "day sat" : "day");
-            if (currentYear === new Date().getFullYear() && currentMonth === new Date().getMonth() && d === new Date().getDate()) dayClass += " today";
-
+            let dayClass = (dayOfWeek === 0 || fixH) ? "day sun" : (dayOfWeek === 6 ? "day sat" : "day");
+        
+            // 만약 "오늘" 표시 로직이 따로 있다면 아래처럼 한 줄 추가 (새로 선언하지 말고 값만 추가)
+            const today = new Date();
+            if (currentYear === today.getFullYear() && currentMonth === today.getMonth() && d === today.getDate()) {
+                dayClass += " today"; 
+            }
             // 4. 태그 생성 (공휴일 제외한 근무/일정만)
             const eventHtml = sortedEvents.filter(ev => !ev.isHoliday).map(ev => {
                 const task = ev.text.trim();
