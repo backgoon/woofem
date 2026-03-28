@@ -316,7 +316,7 @@ let cachedHolidays = {};
             const userEvents = data[dateStr] || [], isUserHoliday = userEvents.find(ev => ev.isHoliday);
             let holidayName = holidays[dateStr] || (isUserHoliday ? isUserHoliday.text : '');
             if (holidayName.includes("기독탄신일") || holidayName.includes("크리스마스")) {
-                holidayName = "✨ 예수님 오신날 🎄";
+                holidayName = "✨예수님 오신날🎄";
             }
             let dayClass = "day";
             if (dayOfWeek === 0 || holidayName) dayClass += " sun";
