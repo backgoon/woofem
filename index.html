@@ -503,9 +503,9 @@ window.openYearlyView = async () => {
             // [수정 포인트] 홀브 형식인 '2026-1-1'로 키 생성
             const holidayKey = `${currentYear}-${m}-${d}`; 
             let fixH = hList[holidayKey]; // 이제 정확히 매칭됩니다!
-            if (fixH && (fixH.includes("기독탄신일") || fixH.includes("크리스마스"))) {
-                fixH = "✨예수님✨오신날";
-            }
+            // if (fixH && (fixH.includes("기독탄신일") || fixH.includes("크리스마스"))) {
+            //     fixH = "✨예수님✨오신날";
+            // }
             if (fixH && (fixH.includes("부처님 오신 날") || fixH.includes("석가탄신일"))) {
                 fixH = "석탄일";
             }
@@ -527,8 +527,8 @@ window.openYearlyView = async () => {
             personalEvents.forEach(ev => {
                 let eventText = ev.text; // 여기서도 let 사용
     
-                if(ev.isHoliday && (eventText.includes("성탄절") || eventText.includes("크리스마스"))) {
-                    eventText = "예수님 오신날";
+                if(ev.isHoliday && (eventText.includes("부처님 오신 날") || eventText.includes("석가탄신일"))) {
+                    eventText = "석탄일";
                 }
                 if(ev.isHoliday) {
                     // API와 이름이 중복되지 않을 때만 추가
