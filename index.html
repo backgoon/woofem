@@ -15,7 +15,18 @@
     body { font-family: 'Nanum Gothic', sans-serif; background: var(--soft-pink); margin: 0; padding: 10px; overflow-x: hidden; width: 100%; box-sizing: border-box; }
 
     /* 헤더 레이아웃 */
-    .header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(255,133,161,0.1); margin-bottom: 15px; border: 1px solid var(--soft-pink); }
+    /* .header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(255,133,161,0.1); margin-bottom: 15px; border: 1px solid var(--soft-pink); } */
+    .header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    background: white; 
+    padding: 10px 15px; /* 위아래 패딩을 조금 줄임 */
+    border-radius: 12px; 
+    box-shadow: 0 4px 15px rgba(255,133,161,0.1); 
+    margin-bottom: 5px; /* 15px -> 5px로 수정 */
+    border: 1px solid var(--soft-pink); 
+}
 .calendar-grid {
     display: grid !important;
     grid-template-columns: repeat(7, 12.5% [col-start]) !important; /* 비율을 명확히 고정 */
