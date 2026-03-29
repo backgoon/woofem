@@ -318,6 +318,9 @@ let cachedHolidays = {};
             if (holidayName.includes("기독탄신일") || holidayName.includes("크리스마스")) {
                 holidayName = "✨예수님✨오신날";
             }
+            if (holidayName.includes("부처님 오신 날") || holidayName.includes("석가탄신일")) {
+                holidayName = "석탄일";
+            }
             let dayClass = "day";
             if (dayOfWeek === 0 || holidayName) dayClass += " sun";
             if (dayOfWeek === 6) dayClass += " sat";
@@ -500,7 +503,12 @@ window.openYearlyView = async () => {
             // [수정 포인트] 홀브 형식인 '2026-1-1'로 키 생성
             const holidayKey = `${currentYear}-${m}-${d}`; 
             const fixH = hList[holidayKey]; // 이제 정확히 매칭됩니다!
-            
+            if (fixH && (fixH.includes("기독탄신일") || fixH.includes("크리스마스"))) {
+                fixH = "✨예수님✨오신날";
+            }
+            if (fixH && (fixH.includes("부처님 오신 날") || fixH.includes("석가탄신일"))) {
+                fixH = "석탄일";
+            }
             const dateStr = `${currentYear}-${m}-${d}`;
             const dayEvents = data[dateStr] || [];
             
