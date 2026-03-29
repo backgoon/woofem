@@ -15,18 +15,8 @@
     body { font-family: 'Nanum Gothic', sans-serif; background: var(--soft-pink); margin: 0; padding: 10px; overflow-x: hidden; width: 100%; box-sizing: border-box; }
 
     /* 헤더 레이아웃 */
-    /* .header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(255,133,161,0.1); margin-bottom: 15px; border: 1px solid var(--soft-pink); } */
-    .header { 
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center; 
-    background: white; 
-    padding: 10px 15px; /* 위아래 패딩을 조금 줄임 */
-    border-radius: 12px; 
-    box-shadow: 0 4px 15px rgba(255,133,161,0.1); 
-    margin-bottom: 5px; /* 15px -> 5px로 수정 */
-    border: 1px solid var(--soft-pink); 
-}
+    .header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(255,133,161,0.1); margin-bottom: 15px; border: 1px solid var(--soft-pink); }
+
 .calendar-grid {
     display: grid !important;
     grid-template-columns: repeat(7, 12.5% [col-start]) !important; /* 비율을 명확히 고정 */
@@ -80,7 +70,10 @@
 
     /* 달력 그리드 */
     .calendar-card { background: white; padding: 10px; border-radius: 15px; box-shadow: 0 8px 25px rgba(255,133,161,0.15); border: 2px solid var(--soft-pink); width: 100%; box-sizing: border-box; }
-    .grid { display: grid; grid-template-columns: repeat(7, 1fr); grid-auto-rows: minmax(100px, auto); gap: 4px; width: 100%; }
+    .grid { display: grid; grid-template-columns: repeat(7, 1fr); 
+           /* grid-auto-rows: minmax(100px, auto);  */
+           gap: 4px; 
+           width: 100%; }
     .day-header { text-align: center; font-weight: bold; padding: 5px; color: var(--pink); font-size: 12px; }
     .day-header:nth-child(1) { color: var(--sun); }
     .day-header:nth-child(7) { color: var(--sat); }
